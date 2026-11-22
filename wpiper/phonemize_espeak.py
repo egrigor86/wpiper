@@ -27,6 +27,8 @@ _ESPEAK_DIRS = [Path(r"C:\Program Files\eSpeak NG"), Path(r"C:\Program Files (x8
 if "ESPEAK_NG_DIR" in os.environ:
     _ESPEAK_DIRS.insert(0, Path(os.environ["ESPEAK_NG_DIR"]))
 
+_ACTIVE_VOICE: Optional[str] = None  # voice currently loaded in the shared espeak engine
+
 _SENTENCE_END = ".?!"
 _CLAUSE_END = ".?!,:;"
 
@@ -59,6 +61,9 @@ class EspeakPhonemizer:
             self._init_ctypes(espeak_dir, espeak_data_dir)
 
         self.backend = "bridge" if self._bridge is not None else "ctypes"
+        # (re)initializing the engine may reset its voice
+        global _ACTIVE_VOICE
+        _ACTIVE_VOICE = None
 
     def _init_ctypes(self, espeak_dir, espeak_data_dir) -> None:
         dirs = [Path(espeak_dir)] if espeak_dir else _ESPEAK_DIRS
@@ -118,8 +123,14 @@ class EspeakPhonemizer:
         return best[1] if best else None
 
     def _set_voice(self, voice: str) -> None:
-        if voice == self._voice:
+        # espeak (bridge or DLL) is one engine per process, shared by every
+        # EspeakPhonemizer, so the active voice is tracked at module level.
+        # A per-instance cache let one voice (e.g. en-au) leak into another
+        # voice's phonemes when several voices share a server.
+        global _ACTIVE_VOICE
+        if voice == _ACTIVE_VOICE:
             return
+        _ACTIVE_VOICE = None
         try:
             self._set_voice_raw(voice)
         except RuntimeError:
@@ -127,6 +138,7 @@ class EspeakPhonemizer:
             if not alias or alias.lower() == voice.lower():
                 raise
             self._set_voice_raw(alias)
+        _ACTIVE_VOICE = voice
         self._voice = voice
 
     def _clauses(self, text: str) -> list[tuple[str, str, bool]]:
