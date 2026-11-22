@@ -23,8 +23,8 @@ Download `christopher.onnx` and `christopher.onnx.json` into `voices\` to follow
 Any other Piper voice works too.
 
 The Christopher voice was trained on Australian English audio, but with **en-US** phonemes, because
-the `en-au` phonemizer described below was added after it was trained. It sounds Australian
-because of its audio, and its config correctly stays on `en-us`.
+the `en-au` phonemizer described below was added after it was trained. It still sounds fully
+Australian, because the accent comes from the audio. Its config's `espeak.voice` correctly stays on `en-us`.
 
 ## Requirements
 
