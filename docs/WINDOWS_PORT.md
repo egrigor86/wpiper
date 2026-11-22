@@ -178,11 +178,20 @@ The VITS stochastic duration predictor samples durations, so `noise_w` gives nat
 rhythm. The components both systems share (front end, alignment, HiFi-GAN, data layout) are what made
 a Windows port of the Piper side a matter of porting a few compiled pieces rather than rewriting a model.
 
-## 5. Not verified / known gaps
+## 5. Verified and known gaps
 
-- `--resume` was tested on the small-format (christopher) run only, not on a big-format run.
+Verified:
+
+- `--resume` continues runs correctly, restoring optimizer state, schedulers, epoch and step.
+- `--init-from` fine-tunes from an existing checkpoint (for example the Christopher checkpoint).
+- Exported ONNX voices work in standard Piper runtimes and libraries, and Piper voices work in wpiper.
+- The core also runs on Linux (tested in Colab) after small changes to `phonemize_espeak.py`, though
+  only Windows is supported.
+
+Known gaps:
+
 - DataLoader workers (`--num-workers > 0`) hung once in a big-format test while other heavy
   software was running; not re-tested. Default 0 is recommended.
 - The viewer (`python -m wpiper.viewer`) shows live metrics and samples for any run; its
   reference-clip panel only reads the small `.pt` format so far.
-- The ONNX model is Piper-layout but has not been run through the official Piper runtime.
+- ONNX Runtime's random sampling ignores `--seed`, so two runs of the same text can differ slightly.
