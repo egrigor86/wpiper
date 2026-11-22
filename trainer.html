@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wpiper Trainer</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#1c2128;--mut:#667085;--line:#e1e4ea;--acc:#2f6fed;--acc-fg:#fff;--bad:#c62828;--ok:#1b8a4b;--warn:#b26a00}
+@media (prefers-color-scheme:dark){:root{--bg:#14171c;--card:#1d2128;--fg:#e6e9ee;--mut:#97a0ae;--line:#2c323c;--acc:#5b93ff;--acc-fg:#0b1220;--bad:#ff6b6b;--ok:#4cc38a;--warn:#f0a73a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,Segoe UI,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:8px 16px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+header h1{font-size:16px;margin:0}
+nav{display:flex;gap:2px;flex-wrap:wrap}
+nav button{border:0;background:none;padding:7px 12px;border-radius:7px;color:var(--mut);font:inherit;cursor:pointer}
+nav button.on{background:var(--acc);color:var(--acc-fg)}
+#sys{margin-left:auto;color:var(--mut);font-size:12px;display:flex;gap:4px 14px;flex-wrap:wrap}
+main{max-width:1200px;margin:0 auto;padding:16px}
+.tab{display:none}.tab.on{display:block}
+section,.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+h2{font-size:15px;margin:0 0 10px}h3{font-size:13px;margin:14px 0 6px;color:var(--mut);font-weight:600}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:3px}
+input[type=text],input[type=number],input[type=password],select,textarea{width:100%;padding:6px 8px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px;font:inherit}
+textarea{min-height:80px;resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+button{padding:6px 12px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:inherit;cursor:pointer}
+button.primary{background:var(--acc);color:var(--acc-fg);border-color:var(--acc)}
+button.danger{color:var(--bad)}
+button.sm{padding:2px 8px;font-size:12px}
+button:disabled{opacity:.5;cursor:default}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:8px 0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:5px 7px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--mut);font-weight:500;font-size:12px}
+tr.sel{background:color-mix(in srgb,var(--acc) 10%,transparent)}
+td.r,th.r{text-align:right}
+.tag{display:inline-block;font-size:11px;padding:0 7px;border-radius:9px;border:1px solid var(--line);color:var(--mut);margin:0 3px 2px 0;white-space:nowrap}
+.tag.bad{color:var(--bad);border-color:var(--bad)}.tag.warn{color:var(--warn);border-color:var(--warn)}.tag.ok{color:var(--ok);border-color:var(--ok)}
+.chip{cursor:pointer;user-select:none}.chip.on{background:var(--acc);color:var(--acc-fg);border-color:var(--acc)}
+.msg{font-size:13px;min-height:18px;margin:6px 0;white-space:pre-wrap}.msg.err{color:var(--bad)}
+.mut{color:var(--mut)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:8px 0}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px}.stat b{display:block;font-size:18px}.stat span{font-size:12px;color:var(--mut)}
+.charts{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.chart{border:1px solid var(--line);border-radius:8px;padding:6px 8px}.chart .t{font-size:12px;color:var(--mut);display:flex;justify-content:space-between}
+svg text{fill:var(--mut);font-size:10px}
+.bar{height:10px;background:var(--line);border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
+pre.log{background:#0e1116;color:#d6dbe3;padding:10px;border-radius:8px;max-height:340px;overflow:auto;font-size:12px;white-space:pre-wrap;margin:6px 0}
+td input[type=text]{padding:3px 6px}
+audio{height:30px;max-width:100%}
+.radios{display:flex;gap:14px;flex-wrap:wrap}.radios label{display:flex;gap:5px;align-items:center;color:var(--fg);font-size:14px;margin:0}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>wpiper Trainer</h1>
+  <nav id="nav"></nav>
+  <div id="sys">…</div>
+</header>
+<main>
+
+<!-- ============ DATASETS ============ -->
+<div class="tab" id="t-datasets">
+  <section>
+    <h2>Datasets in <code>data/</code></h2>
+    <div class="tbl"><table><thead><tr><th>Name</th><th>Format</th><th class="r">Clips</th><th class="r">Hours</th><th class="r">Train / val / test</th><th>Rate</th><th>Model</th><th>Language</th><th class="r">Size</th><th></th></tr></thead><tbody id="dsRows"></tbody></table></div>
+    <div class="msg" id="dsMsg"></div>
+  </section>
+  <section id="dsDetail" style="display:none"></section>
+</div>
+
+<!-- ============ IMPORT ============ -->
+<div class="tab" id="t-import">
+  <div class="two">
+    <section>
+      <h2>1 · New draft</h2>
+      <div class="radios" id="dMode"><label><input type="radio" name="dmode" value="folder" checked>Folder of wav + txt pairs</label><label><input type="radio" name="dmode" value="metadata">Metadata + wav folder</label></div>
+      <div class="grid">
+        <div><label>Draft name</label><input type="text" id="dName" placeholder="my_voice"></div>
+        <div style="grid-column:span 2"><label>Folder with the wavs (server path)</label><input type="text" id="dDir" placeholder="E:\TTS-Datasets\my_voice\wavs"></div>
+      </div>
+      <div id="dFolderOpts" class="row"><label style="display:flex;gap:5px;align-items:center;color:var(--fg)"><input type="checkbox" id="dRec">Include sub-folders</label></div>
+      <div id="dMetaOpts" style="display:none">
+        <div class="grid">
+          <div style="grid-column:span 2"><label>Metadata file path (server) — or upload / paste below</label><input type="text" id="dMetaPath" placeholder="E:\TTS-Datasets\my_voice\metadata.csv"></div>
+          <div><label>Upload metadata file</label><input type="file" id="dMetaFile" accept=".csv,.txt,.tsv"></div>
+        </div>
+        <label>Or paste rows (<code>filename|transcript</code>; also tab or comma separated)</label>
+        <textarea id="dMetaText" placeholder="clip001.wav|Hello there.&#10;clip002|How are you?"></textarea>
+        <div class="row"><label style="display:flex;gap:5px;align-items:center;color:var(--fg)"><input type="checkbox" id="dHeader">First line is a header</label></div>
+      </div>
+      <div class="row"><button class="primary" id="dCreate">Create draft</button></div>
+      <div class="msg" id="dMsg"></div>
+      <h3>Existing drafts</h3>
+      <div class="tbl"><table><tbody id="draftRows"></tbody></table></div>
+    </section>
+    <section>
+      <h2>3 · Prepare dataset</h2>
+      <div class="mut" id="pInfo">Select a draft first.</div>
+      <div class="radios" style="margin:8px 0"><label><input type="radio" name="pmode" value="big" checked>Big (prepare_big + make_split)</label><label><input type="radio" name="pmode" value="small">Small (prepare_dataset)</label></div>
+      <div class="grid">
+        <div><label>New dataset name</label><input type="text" id="pName"></div>
+        <div><label>Model size</label><select id="pQuality"></select></div>
+        <div><label>Language</label><select id="pLang"></select></div>
+        <div><label>espeak voice</label><input type="text" id="pEspeak" value="en-us"></div>
+        <div><label>Language tag</label><input type="text" id="pLangCode" placeholder="de_DE"></div>
+        <div><label>Sample rate</label><input type="number" id="pSr" value="22050"></div>
+        <div><label>Min seconds</label><input type="number" id="pMin" value="0.5" step="0.1"></div>
+        <div><label>Max seconds</label><input type="number" id="pMax" value="30" step="1"></div>
+        <div><label>Trim dB (0 = off)</label><input type="number" id="pTrim" value="40"></div>
+        <div><label>Keep silence (s)</label><input type="number" id="pKeep" value="0.25" step="0.05"></div>
+        <div><label>Validation clips</label><input type="number" id="pVal" value="20"></div>
+        <div><label>Test clips</label><input type="number" id="pTest" value="10"></div>
+        <div class="bigOnly"><label>Workers</label><input type="number" id="pWorkers" value="8"></div>
+        <div class="bigOnly"><label>cps keep low %</label><input type="number" id="pLo" value="0.3" step="0.1"></div>
+        <div class="bigOnly"><label>cps keep high %</label><input type="number" id="pHi" value="99.7" step="0.1"></div>
+      </div>
+      <div class="row"><label style="display:flex;gap:5px;align-items:center;color:var(--fg)"><input type="checkbox" id="pOver">Replace if it exists</label></div>
+      <div class="mut" style="font-size:12px">Rows with missing audio, empty text, markup or duplicate filenames are left out automatically, as are clips outside the min/max seconds.</div>
+      <div class="row"><button class="primary" id="pGo">Prepare dataset</button></div>
+      <div class="msg" id="pMsg"></div>
+    </section>
+  </div>
+
+  <section id="editor" style="display:none">
+    <h2>2 · Clean up: <span id="eName"></span></h2>
+    <div class="mut" id="eSummary"></div>
+    <div class="row" id="eChips"></div>
+    <div class="row">
+      <button class="sm" data-fix="auto_paths" title="For rows whose file isn't found, try adding .wav, removing the folder, or a wavs/ prefix">Auto-fix paths</button>
+      <button class="sm" data-fix="add_ext" title="Append .wav to names without an extension">Add .wav</button>
+      <button class="sm" data-fix="strip_dir" title="Keep only the file name">Strip folders</button>
+      <input type="text" id="ePrefix" placeholder="prefix e.g. wavs/" style="width:130px">
+      <button class="sm" data-fix="add_prefix">Add prefix</button>
+      <button class="sm" data-fix="remove_prefix">Remove prefix</button>
+      <button class="sm" data-fix="fix_quotes" title="Curly quotes / dashes / ellipsis to plain characters">Plain quotes</button>
+      <button class="sm danger" id="eDrop">Remove problem rows…</button>
+      <input type="text" id="eSearch" placeholder="search…" style="width:160px;margin-left:auto">
+    </div>
+    <div class="row"><span class="mut">Audio folder:</span><input type="text" id="eDir" style="flex:1;min-width:260px"><button class="sm" id="eDirSet">Change</button></div>
+    <div class="msg" id="eMsg"></div>
+    <div class="tbl"><table><thead><tr><th>#</th><th></th><th style="width:22%">File</th><th>Transcript</th><th class="r">Sec</th><th>Issues</th><th></th></tr></thead><tbody id="eRows"></tbody></table></div>
+    <div class="row"><button class="sm" id="ePrev">‹ Prev</button><span id="ePage" class="mut"></span><button class="sm" id="eNext">Next ›</button></div>
+  </section>
+</div>
+
+<!-- ============ TRAIN ============ -->
+<div class="tab" id="t-train">
+  <section>
+    <h2>Start training</h2>
+    <div class="radios" id="trMode">
+      <label><input type="radio" name="trmode" value="scratch" checked>From scratch</label>
+      <label><input type="radio" name="trmode" value="finetune">Fine-tune from a base model</label>
+      <label><input type="radio" name="trmode" value="resume">Resume a run</label>
+    </div>
+    <div class="grid">
+      <div><label>Dataset</label><select id="trData"></select></div>
+      <div id="trQualBox"><label>Model size</label><select id="trQuality"></select></div>
+      <div id="trRunNew"><label>New run name</label><input type="text" id="trRun" placeholder="my_voice"></div>
+      <div id="trRunOld" style="display:none"><label>Run to resume</label><select id="trRunSel"></select></div>
+      <div id="trBaseBox" style="display:none"><label>Base checkpoint</label><select id="trBase"></select></div>
+      <div id="trCkptBox" style="display:none"><label>Resume from</label><select id="trCkpt"></select></div>
+    </div>
+    <div class="mut" id="trDataInfo"></div>
+    <div class="msg err" id="trSizeWarn"></div>
+    <div class="row"><span class="mut">Presets:</span><button class="sm" id="preScratch">Scratch</button><button class="sm" id="preFine">Fine-tune</button></div>
+    <div class="grid">
+      <div><label>Batch size</label><input type="number" id="trBatch" value="32"></div>
+      <div><label>Max epochs</label><input type="number" id="trEpochs" value="1000"></div>
+      <div><label>Precision</label><select id="trPrec"><option>bf16</option><option>32</option><option>16</option></select></div>
+      <div><label>Validate every (epochs)</label><input type="number" id="trVal" value="5"></div>
+      <div><label>Samples every (epochs)</label><input type="number" id="trSample" value="25"></div>
+      <div><label>Save last.ckpt every</label><input type="number" id="trSave" value="5"></div>
+      <div><label>Keep epoch-N.ckpt every</label><input type="number" id="trKeep" value="50"></div>
+      <div><label>Data workers</label><input type="number" id="trWorkers" value="0"></div>
+      <div><label>Log every (steps)</label><input type="number" id="trLog" value="50"></div>
+      <div><label>Seed</label><input type="number" id="trSeed" value="1234"></div>
+    </div>
+    <div class="mut" style="font-size:12px">Each checkpoint is ≈ 850 MB. Stopping kills the process, so progress since the last <code>last.ckpt</code> save is lost — keep "Save last.ckpt every" small.</div>
+    <div class="row"><button class="primary" id="trGo">Start training</button></div>
+    <div class="msg" id="trMsg"></div>
+  </section>
+</div>
+
+<!-- ============ MONITOR ============ -->
+<div class="tab" id="t-monitor">
+  <section>
+    <div class="row"><label style="margin:0">Run</label><select id="mRun" style="width:240px"></select><span id="mBadge"></span>
+      <button class="sm danger" id="mStop" style="display:none">Stop training</button></div>
+    <div id="mProg"></div>
+    <div class="stats" id="mStats"></div>
+  </section>
+  <section><h2>Curves</h2><div class="charts" id="mCharts"></div></section>
+  <div class="two">
+    <section><h2>Samples</h2><div class="row"><select id="mEpoch" style="width:160px"></select></div><div id="mSamples" class="mut"></div></section>
+    <section><h2>Export a checkpoint to a voice</h2>
+      <div class="grid"><div><label>Checkpoint</label><select id="xCkpt"></select></div><div><label>Voice name</label><input type="text" id="xName"></div></div>
+      <div class="row"><button class="primary" id="xGo">Convert to ONNX</button></div><div class="msg" id="xMsg"></div>
+      <div class="mut" style="font-size:12px">Saved to <code>voices/</code>, then available to the TTS server (use its Rescan button).</div>
+    </section>
+  </div>
+  <section><h2>Training log</h2><pre class="log" id="mLog">No training job.</pre></section>
+</div>
+
+<!-- ============ RUNS ============ -->
+<div class="tab" id="t-runs">
+  <section><h2>Runs in <code>runs/</code></h2>
+    <div class="tbl"><table><thead><tr><th>Run</th><th>Model</th><th class="r">Epoch</th><th class="r">Val loss</th><th class="r">Checkpoints</th><th class="r">Size</th><th>Last activity</th><th></th></tr></thead><tbody id="runRows"></tbody></table></div>
+    <div class="msg" id="runMsg"></div>
+  </section>
+</div>
+
+<!-- ============ JOBS ============ -->
+<div class="tab" id="t-jobs">
+  <section><h2>Jobs</h2>
+    <div class="tbl"><table><thead><tr><th>Started</th><th>Job</th><th>Status</th><th></th></tr></thead><tbody id="jobRows"></tbody></table></div>
+    <div class="msg" id="jobMsg"></div>
+  </section>
+  <section id="jobLogBox" style="display:none"><h2 id="jobLogTitle">Log</h2><pre class="log" id="jobLog"></pre></section>
+</div>
+
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store = { get(k){ try { return localStorage.getItem(k) || '' } catch { return '' } }, set(k,v){ try { localStorage.setItem(k,v) } catch {} } };
+const fmt = (n, d = 1) => n == null ? '–' : (+n).toFixed(d);
+const ago = t => { if (!t) return '–'; const s = Date.now()/1000 - t; return s < 90 ? 'just now' : s < 5400 ? Math.round(s/60) + ' min ago' : s < 129600 ? Math.round(s/3600) + ' h ago' : new Date(t*1000).toLocaleDateString(); };
+const dur = s => s == null ? '–' : s >= 3600 ? (s/3600).toFixed(1) + ' h' : s >= 60 ? Math.round(s/60) + ' min' : Math.round(s) + ' s';
+function say(id, text, err) { const e = $(id); e.textContent = text; e.classList.toggle('err', !!err); }
+async function api(path, method = 'GET', body) {
+  const r = await fetch('/api' + path, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+  let j = null; try { j = await r.json(); } catch {}
+  if (!r.ok) { const d = j && j.detail; throw new Error(typeof d === 'string' ? d : (d ? JSON.stringify(d) : r.statusText)); }
+  return j;
+}
+const guard = (msgId, fn) => async (...a) => { try { await fn(...a); } catch (e) { say(msgId, e.message, true); } };
+
+// ---------- model sizes and languages ----------
+let OPTS = { qualities: [], languages: [] };
+async function loadOptions() {
+  try { OPTS = await api('/options'); } catch { return; }
+  const q = OPTS.qualities.map(x => `<option value="${x.id}">${esc(x.label)}</option>`).join('');
+  $('pQuality').innerHTML = q; $('pQuality').value = 'medium';
+  $('trQuality').innerHTML = '<option value="">Auto (from dataset or base checkpoint)</option>' + q;
+  $('pLang').innerHTML = '<option value="">Custom (type espeak voice and tag)</option>' + OPTS.languages.map(l =>
+    `<option value="${l.espeak}" ${l.available ? '' : 'disabled'}>${esc(l.label)} · ${l.espeak}${l.available ? '' : ' (no espeak data)'}</option>`).join('');
+  $('pLang').value = 'en-us'; pLangChanged();
+}
+function pLangChanged() {
+  const l = OPTS.languages.find(x => x.espeak === $('pLang').value);
+  if (l) { $('pEspeak').value = l.espeak; $('pLangCode').value = l.code; }
+}
+function pQualityChanged() {
+  const q = OPTS.qualities.find(x => x.id === $('pQuality').value); if (q) $('pSr').value = q.sample_rate;
+}
+$('pLang').onchange = pLangChanged; $('pQuality').onchange = pQualityChanged; $('trQuality').onchange = () => trSizeCheck();
+loadOptions();
+
+// ---------- tabs ----------
+const TABS = [['datasets','Datasets'],['import','Import & Clean'],['train','Train'],['monitor','Monitor'],['runs','Runs'],['jobs','Jobs']];
+$('nav').innerHTML = TABS.map(([k, n]) => `<button data-t="${k}">${n}</button>`).join('');
+let tab = '';
+function show(t) {
+  tab = t; store.set('trainerTab', t);
+  document.querySelectorAll('.tab').forEach(e => e.classList.toggle('on', e.id === 't-' + t));
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  ({ datasets: loadDatasets, import: loadDrafts, train: loadTrain, monitor: loadMonitor, runs: loadRuns, jobs: loadJobs })[t]();
+}
+$('nav').onclick = e => { const b = e.target.closest('button'); if (b) show(b.dataset.t); };
+
+// ---------- system strip ----------
+async function refreshSys() {
+  try {
+    const s = await api('/system');
+    const g = s.gpu ? `<span>GPU ${esc(s.gpu.name)}: ${s.gpu.util}% · ${(s.gpu.mem_used_mb/1024).toFixed(1)}/${(s.gpu.mem_total_mb/1024).toFixed(0)} GB · ${s.gpu.temp}°C</span>` : '<span>no GPU info</span>';
+    $('sys').innerHTML = g + `<span>disk free ${s.disk_free_gb} GB</span>` + (s.training.length ? `<span class="tag ok">training: ${esc(s.training[0].meta.run)}</span>` : '');
+    window.sysInfo = s;
+  } catch { $('sys').textContent = 'server unreachable'; }
+}
+
+// ---------- charts ----------
+const COLORS = ['#2f6fed', '#e8590c', '#2b9348', '#9c36b5', '#c92a2a', '#0c8599', '#b08900'];
+function lineChart(title, pts, color, xlabel = 'epoch') {
+  const W = 300, H = 120, L = 38, B = 16, T = 6, R = 6;
+  if (!pts.length) return `<div class="chart"><div class="t">${title}</div><div class="mut" style="padding:30px 0;text-align:center">no data</div></div>`;
+  let xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  if (x1 === x0) x1 = x0 + 1; if (y1 === y0) { y1 += 1; y0 -= 1; }
+  const px = x => L + (x - x0) / (x1 - x0) * (W - L - R), py = y => T + (1 - (y - y0) / (y1 - y0)) * (H - T - B);
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + px(p[0]).toFixed(1) + ' ' + py(p[1]).toFixed(1)).join('');
+  const last = pts[pts.length - 1][1];
+  let grid = '';
+  for (let i = 0; i <= 3; i++) { const y = y0 + (y1 - y0) * i / 3; grid += `<line x1="${L}" x2="${W-R}" y1="${py(y)}" y2="${py(y)}" stroke="var(--line)"/><text x="${L-4}" y="${py(y)+3}" text-anchor="end">${y.toPrecision(3)}</text>`; }
+  grid += `<text x="${L}" y="${H-3}">${Math.round(x0)}</text><text x="${W-R}" y="${H-3}" text-anchor="end">${Math.round(x1)} ${xlabel}</text>`;
+  return `<div class="chart"><div class="t"><span>${title}</span><b style="color:var(--fg)">${last.toPrecision(4)}</b></div><svg viewBox="0 0 ${W} ${H}" width="100%">${grid}<path d="${d}" fill="none" stroke="${color}" stroke-width="1.5"/></svg></div>`;
+}
+function barChart(h, label, color = '#2f6fed') {
+  if (!h || !h.counts.length) return '';
+  const W = 300, H = 110, L = 6, B = 16, max = Math.max(...h.counts), n = h.counts.length, bw = (W - L * 2) / n;
+  const bars = h.counts.map((c, i) => `<rect x="${L + i * bw + 0.5}" y="${H - B - c / max * (H - B - 6)}" width="${bw - 1}" height="${c / max * (H - B - 6)}" fill="${color}"><title>${h.edges[i].toFixed(2)}–${h.edges[i+1].toFixed(2)}: ${c}</title></rect>`).join('');
+  return `<div class="chart"><div class="t">${label}</div><svg viewBox="0 0 ${W} ${H}" width="100%">${bars}<text x="${L}" y="${H-3}">${h.edges[0].toFixed(1)}</text><text x="${W-L}" y="${H-3}" text-anchor="end">${h.edges[n].toFixed(1)}</text></svg></div>`;
+}
+
+// ============================ DATASETS ============================
+let datasets = [], selDs = '';
+async function loadDatasets() {
+  datasets = await api('/datasets');
+  $('dsRows').innerHTML = datasets.map(d => `<tr class="${d.name === selDs ? 'sel' : ''}">
+    <td><b>${esc(d.name)}</b></td><td>${d.kind}${d.has_split ? '' : ' <span class="tag warn">no split</span>'}</td>
+    <td class="r">${d.clips ?? '–'}</td><td class="r">${d.hours ?? '–'}</td><td class="r">${d.train ?? '–'} / ${d.val ?? '–'} / ${d.test ?? '–'}</td>
+    <td>${d.sample_rate ?? '–'}</td><td>${d.quality ?? 'medium'}</td><td>${esc(d.language || d.espeak || '–')}</td><td class="r">${d.size_mb >= 1000 ? (d.size_mb/1000).toFixed(1) + ' GB' : d.size_mb + ' MB'}</td>
+    <td style="white-space:nowrap"><button class="sm" data-a="stats" data-n="${esc(d.name)}">Stats</button> <button class="sm" data-a="train" data-n="${esc(d.name)}">Train…</button> <button class="sm danger" data-a="del" data-n="${esc(d.name)}">Delete</button></td></tr>`).join('') || '<tr><td colspan="10" class="mut">No datasets yet — import one on the next tab.</td></tr>';
+}
+$('dsRows').onclick = guard('dsMsg', async e => {
+  const b = e.target.closest('button'); if (!b) return; const n = b.dataset.n;
+  if (b.dataset.a === 'stats') { selDs = n; loadDatasets(); await showStats(n); }
+  else if (b.dataset.a === 'train') { await show('train'); $('trData').value = n; trInfo(); }
+  else if (b.dataset.a === 'del' && confirm(`Permanently delete dataset "${n}" and all its files?`)) { await api('/datasets/' + n, 'DELETE'); if (selDs === n) $('dsDetail').style.display = 'none'; say('dsMsg', 'Deleted.'); loadDatasets(); }
+});
+async function showStats(n) {
+  const box = $('dsDetail'); box.style.display = 'block'; box.innerHTML = '<div class="mut">Computing statistics…</div>';
+  const s = await api(`/datasets/${n}/stats`), info = datasets.find(d => d.name === n) || {};
+  const sp = s.split ? Object.entries(s.split).map(([k, v]) => `<tr><td>${k}</td><td class="r">${v.clips}</td><td class="r">${v.hours ?? '–'}</td></tr>`).join('') : '';
+  const outl = s.outliers ? Object.entries(s.outliers).map(([k, rows]) => `<h3>${k.replace('_', ' ')}</h3><div class="tbl"><table>${rows.map(r => `<tr><td><button class="sm" data-clip="${r.i}">▶</button></td><td class="r">${r.secs}s</td><td class="r">${r.cps} c/s</td><td>${esc(r.text)}</td></tr>`).join('')}</table></div>`).join('') : '';
+  const rej = s.manifest && s.manifest.rejected_by_reason ? Object.entries(s.manifest.rejected_by_reason).map(([k, v]) => `<span class="tag warn">${esc(k)}: ${v}</span>`).join('') : '';
+  box.innerHTML = `<h2>${esc(n)} <span class="mut">· ${s.kind}</span></h2>
+    <div class="stats"><div class="stat"><b>${s.clips}</b><span>clips${s.sampled && s.sampled < s.clips ? ` (stats from ${s.sampled})` : ''}</span></div><div class="stat"><b>${s.hours}</b><span>hours</span></div>
+    <div class="stat"><b>${s.secs.mean}s</b><span>mean clip (median ${s.secs.median}, ${s.secs.min}–${s.secs.max})</span></div><div class="stat"><b>${s.cps_mean}</b><span>chars / second</span></div><div class="stat"><b>${s.chars_mean}</b><span>chars / clip</span></div><div class="stat"><b>${s.sample_rate}</b><span>Hz</span></div></div>
+    <div class="charts">${barChart(s.hist_secs, 'Clip length (s)')}${barChart(s.hist_cps, 'Characters per second', '#e8590c')}${barChart(s.hist_phonemes, 'Phoneme ids per clip', '#2b9348')}</div>
+    ${sp ? `<h3>Split</h3><table style="max-width:360px"><tr><th></th><th class="r">clips</th><th class="r">hours</th></tr>${sp}</table>` : ''}
+    ${rej ? `<h3>Rejected during prepare</h3><div>${rej}</div>` : ''}
+    ${s.rejected && s.rejected.sample.length ? `<div class="tbl"><table>${s.rejected.sample.slice(0, 8).map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc((r[2] || '').slice(0, 120))}</td></tr>`).join('')}</table></div>` : ''}
+    ${s.filtered && s.filtered.count ? `<h3>Dropped by chars/second filter: ${s.filtered.count}</h3>` : ''}
+    ${s.kind === 'big' ? `<h3>Rebuild split</h3><div class="row"><span class="mut">keep cps %</span><input type="number" id="sLo" value="0.3" step="0.1" style="width:80px"><input type="number" id="sHi" value="99.7" step="0.1" style="width:80px"><span class="mut">val</span><input type="number" id="sVal" value="${info.val || 20}" style="width:70px"><span class="mut">test</span><input type="number" id="sTest" value="${info.test || 10}" style="width:70px"><button class="sm" id="sGo">Run make_split</button></div><div class="msg" id="sMsg"></div>` : ''}
+    <h3>Outliers (check these for bad audio / transcripts)</h3>${outl || '<div class="mut">Not available for this format.</div>'}`;
+  box.onclick = guard('sMsg', async e => {
+    const c = e.target.closest('[data-clip]'); if (c) { new Audio(`/api/datasets/${n}/clip/${c.dataset.clip}`).play(); return; }
+    if (e.target.id === 'sGo') { const j = await api(`/datasets/${n}/split`, 'POST', { cps_low: +$('sLo').value, cps_high: +$('sHi').value, val: +$('sVal').value, test: +$('sTest').value }); say('sMsg', 'Started — see Jobs.'); watchJob(j.id); }
+  });
+}
+
+// ============================ IMPORT / CLEAN ============================
+let draft = '', dFilter = 'all', dOffset = 0, dLimit = 40, dTotal = 0;
+document.querySelectorAll('input[name=dmode]').forEach(r => r.onchange = () => {
+  const m = document.querySelector('input[name=dmode]:checked').value;
+  $('dFolderOpts').style.display = m === 'folder' ? '' : 'none'; $('dMetaOpts').style.display = m === 'metadata' ? '' : 'none';
+});
+$('dMetaFile').onchange = async e => { const f = e.target.files[0]; if (f) $('dMetaText').value = await f.text(); };
+$('dCreate').onclick = guard('dMsg', async () => {
+  const mode = document.querySelector('input[name=dmode]:checked').value, name = $('dName').value.trim();
+  say('dMsg', 'Reading…');
+  const body = { name, mode, audio_dir: $('dDir').value.trim(), recursive: $('dRec').checked, metadata_text: $('dMetaText').value, metadata_path: $('dMetaPath').value.trim(), has_header: $('dHeader').checked };
+  const r = await api('/drafts', 'POST', body).catch(async e => { if (/already exists/.test(e.message) && confirm(e.message + ' Replace it?')) return api('/drafts', 'POST', { ...body, overwrite: true }); throw e; });
+  const rep = r.report && (r.report.wavs_without_txt || r.report.txt_without_wav) ? `\n${r.report.wavs_without_txt} wav(s) without a txt and ${r.report.txt_without_wav} txt(s) without a wav were skipped (e.g. ${(r.report.examples || []).slice(0, 4).join(', ')}).` : '';
+  say('dMsg', `Draft "${r.name}": ${r.rows} rows.${rep}`);
+  await loadDrafts(); openDraft(r.name);
+});
+async function loadDrafts() {
+  const ds = await api('/drafts');
+  $('draftRows').innerHTML = ds.map(d => `<tr class="${d.name === draft ? 'sel' : ''}"><td><b>${esc(d.name)}</b> <span class="mut">${d.rows} rows · ${esc(d.created || '')}</span></td><td style="text-align:right;white-space:nowrap"><button class="sm" data-a="open" data-n="${esc(d.name)}">Open</button> <button class="sm danger" data-a="del" data-n="${esc(d.name)}">Delete</button></td></tr>`).join('') || '<tr><td class="mut">None yet.</td></tr>';
+}
+$('draftRows').onclick = guard('dMsg', async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.a === 'open') openDraft(b.dataset.n);
+  else if (confirm(`Delete draft "${b.dataset.n}"? (Your wav files are not touched.)`)) { await api('/drafts/' + b.dataset.n, 'DELETE'); if (draft === b.dataset.n) { draft = ''; $('editor').style.display = 'none'; } loadDrafts(); }
+});
+function openDraft(n) { draft = n; dFilter = 'all'; dOffset = 0; $('editor').style.display = 'block'; $('eName').textContent = n; $('pName').value = $('pName').value || n; loadDrafts(); loadRows(); }
+const BAD = new Set(['missing', 'unreadable', 'empty_text', 'markup', 'duplicate', 'too_short', 'too_long']);
+async function loadRows() {
+  if (!draft) return;
+  const r = await api(`/drafts/${draft}?offset=${dOffset}&limit=${dLimit}&filter=${encodeURIComponent(dFilter)}&q=${encodeURIComponent($('eSearch').value)}`);
+  const s = r.summary; dTotal = r.total;
+  $('eDir').value = s.audio_dir;
+  $('eSummary').textContent = `${s.rows} rows · ${s.hours_found} h of audio found`;
+  const nProb = Object.entries(s.issues).filter(([k]) => BAD.has(k)).reduce((a, [, v]) => a + v, 0);
+  $('eChips').innerHTML = [['all', 'all'], ['problems', 'problems' + (nProb ? ` (${nProb}+)` : '')], ...Object.entries(s.issues).map(([k, v]) => [k, `${k} (${v})`])]
+    .map(([k, l]) => `<span class="tag chip ${k === dFilter ? 'on' : ''}" data-f="${k}">${esc(l)}</span>`).join('');
+  $('eRows').innerHTML = r.rows.map(x => `<tr data-i="${x.i}"><td class="mut">${x.i}</td><td><button class="sm" data-a="play">▶</button></td>
+    <td><input type="text" data-k="src" value="${esc(x.src)}"></td><td><input type="text" data-k="text" value="${esc(x.text)}"></td>
+    <td class="r">${x.dur != null && x.dur >= 0 ? x.dur.toFixed(1) : '–'}</td>
+    <td>${x.issues.map(k => `<span class="tag ${BAD.has(k) ? 'bad' : 'warn'}">${k}</span>`).join('')}</td><td><button class="sm danger" data-a="del">✕</button></td></tr>`).join('') || '<tr><td colspan="7" class="mut">No rows match.</td></tr>';
+  $('ePage').textContent = dTotal ? `${dOffset + 1}–${Math.min(dOffset + dLimit, dTotal)} of ${dTotal}` : '0 rows';
+  $('ePrev').disabled = dOffset === 0; $('eNext').disabled = dOffset + dLimit >= dTotal;
+  $('pInfo').textContent = `${s.rows} rows in "${draft}" · suggestion: ${s.rows >= 2000 ? 'big' : 'small'} format`;
+  if (!window._pmodeSet) { document.querySelector(`input[name=pmode][value=${s.rows >= 2000 ? 'big' : 'small'}]`).checked = true; pmodeChanged(); }
+}
+$('eChips').onclick = e => { const c = e.target.closest('[data-f]'); if (c) { dFilter = c.dataset.f; dOffset = 0; loadRows(); } };
+$('ePrev').onclick = () => { dOffset = Math.max(0, dOffset - dLimit); loadRows(); };
+$('eNext').onclick = () => { dOffset += dLimit; loadRows(); };
+let searchT; $('eSearch').oninput = () => { clearTimeout(searchT); searchT = setTimeout(() => { dOffset = 0; loadRows(); }, 300); };
+$('eRows').onchange = guard('eMsg', async e => {
+  const tr = e.target.closest('tr'), k = e.target.dataset.k; if (!tr || !k) return;
+  await api(`/drafts/${draft}/rows/${tr.dataset.i}`, 'PUT', { [k]: e.target.value }); loadRows();
+});
+let player = null;
+$('eRows').onclick = guard('eMsg', async e => {
+  const b = e.target.closest('button'), tr = e.target.closest('tr'); if (!b) return;
+  if (b.dataset.a === 'play') { if (player) player.pause(); player = new Audio(`/api/drafts/${draft}/audio/${tr.dataset.i}?t=${Date.now()}`); player.onerror = () => say('eMsg', 'Cannot play this file (missing?).', true); player.play(); }
+  else if (b.dataset.a === 'del') { await api(`/drafts/${draft}/rows/${tr.dataset.i}`, 'DELETE'); loadRows(); }
+});
+document.querySelectorAll('[data-fix]').forEach(b => b.onclick = guard('eMsg', async () => {
+  const r = await api(`/drafts/${draft}/fix`, 'POST', { action: b.dataset.fix, prefix: $('ePrefix').value });
+  say('eMsg', `${b.textContent}: ${r.changed} row(s) changed.`); loadRows();
+}));
+$('eDirSet').onclick = guard('eMsg', async () => { await api(`/drafts/${draft}/fix`, 'POST', { action: 'set_audio_dir', audio_dir: $('eDir').value.trim() }); say('eMsg', 'Audio folder updated.'); loadRows(); });
+$('eDrop').onclick = guard('eMsg', async () => {
+  const kinds = ['missing', 'unreadable', 'empty_text', 'markup', 'duplicate', 'too_short', 'too_long'];
+  const pick = prompt('Remove rows with any of these issues (comma separated):\n' + kinds.join(', '), 'missing, empty_text, markup, duplicate');
+  if (!pick) return;
+  const r = await api(`/drafts/${draft}/fix`, 'POST', { action: 'drop', kinds: pick.split(',').map(s => s.trim()).filter(Boolean) });
+  say('eMsg', `Removed ${r.changed} row(s).`); loadRows();
+});
+function pmodeChanged() { const big = document.querySelector('input[name=pmode]:checked').value === 'big'; document.querySelectorAll('.bigOnly').forEach(e => e.style.display = big ? '' : 'none'); $('pTest').value = big ? 10 : 5; }
+document.querySelectorAll('input[name=pmode]').forEach(r => r.onchange = () => { window._pmodeSet = true; pmodeChanged(); });
+$('pGo').onclick = guard('pMsg', async () => {
+  if (!draft) throw new Error('Open a draft first.');
+  const g = id => $(id).value;
+  const r = await api(`/drafts/${draft}/prepare`, 'POST', { out_name: g('pName').trim(), mode: document.querySelector('input[name=pmode]:checked').value,
+    espeak_voice: g('pEspeak'), quality: g('pQuality'), language: g('pLangCode').trim(), sample_rate: +g('pSr'), min_sec: +g('pMin'), max_sec: +g('pMax'), trim_db: +g('pTrim'), keep_sec: +g('pKeep'),
+    val: +g('pVal'), test: +g('pTest'), workers: +g('pWorkers'), cps_low: +g('pLo'), cps_high: +g('pHi'), overwrite: $('pOver').checked });
+  say('pMsg', `Started: ${r.clips} clips (${r.dropped} rows left out). Opening Jobs…`); watchJob(r.job.id);
+});
+
+// ============================ TRAIN ============================
+let runsCache = [];
+async function loadTrain() {
+  const [ds, runs] = await Promise.all([api('/datasets'), api('/runs')]); datasets = ds; runsCache = runs;
+  const cur = $('trData').value;
+  $('trData').innerHTML = ds.filter(d => d.has_split).map(d => `<option>${esc(d.name)}</option>`).join('') || '<option value="">(no dataset with a split)</option>';
+  if (cur) $('trData').value = cur;
+  const ck = runs.flatMap(r => r.checkpoints.map(c => ({ v: `${r.name}/${c.file}`, l: `${r.name} / ${c.file} [${r.quality ?? '?'}] (${ago(c.modified)})` })));
+  $('trBase').innerHTML = ck.map(c => `<option value="${esc(c.v)}">${esc(c.l)}</option>`).join('');
+  $('trRunSel').innerHTML = runs.filter(r => r.checkpoints.length).map(r => `<option>${esc(r.name)}</option>`).join('');
+  trRunChanged(); trInfo(); refreshSys();
+}
+function trInfo() {
+  const d = datasets.find(x => x.name === $('trData').value);
+  $('trDataInfo').textContent = d ? `${d.clips ?? '?'} clips · ${d.hours ?? '?'} h · train ${d.train} / val ${d.val} / test ${d.test} · ${d.kind} · ${d.sample_rate ?? '?'} Hz · ${d.quality ?? 'medium'} · ${d.language || d.espeak || '?'}` : '';
+  trSizeCheck();
+}
+// Fine-tuning needs the base checkpoint's size to match the model being trained.
+function trSizeCheck() {
+  const el = $('trSizeWarn'); if (!el) return; el.textContent = '';
+  if (trMode() !== 'finetune') return;
+  const base = runsCache.find(r => r.name === ($('trBase').value || '').split('/')[0]);
+  const d = datasets.find(x => x.name === $('trData').value);
+  const want = $('trQuality').value || (base && base.quality) || (d && d.quality) || 'medium';
+  if (base && base.quality && base.quality !== want) el.textContent = `Base checkpoint is ${base.quality} but the model would be ${want}: the weights will not fit. Pick the matching size, or train from scratch.`;
+}
+$('trData').onchange = trInfo; $('trBase').onchange = trSizeCheck;
+function trMode() { return document.querySelector('input[name=trmode]:checked').value; }
+function trModeChanged() {
+  const m = trMode();
+  $('trRunNew').style.display = m === 'resume' ? 'none' : ''; $('trRunOld').style.display = m === 'resume' ? '' : 'none';
+  $('trBaseBox').style.display = m === 'finetune' ? '' : 'none'; $('trCkptBox').style.display = m === 'resume' ? '' : 'none';
+  $('trQualBox').style.display = m === 'resume' ? 'none' : '';
+  trSizeCheck();
+  if (m === 'finetune') preset('fine'); else if (m === 'scratch') preset('scratch');
+}
+function trRunChanged() {
+  const r = runsCache.find(x => x.name === $('trRunSel').value);
+  $('trCkpt').innerHTML = r ? r.checkpoints.map(c => `<option>${esc(c.file)}</option>`).join('') : '';
+}
+$('trRunSel').onchange = trRunChanged;
+document.querySelectorAll('input[name=trmode]').forEach(r => r.onchange = trModeChanged);
+function preset(p) {
+  const v = p === 'fine' ? { Batch: 12, Epochs: 140, Val: 5, Sample: 10, Save: 5, Keep: 20 } : { Batch: 32, Epochs: 1000, Val: 5, Sample: 25, Save: 5, Keep: 50 };
+  for (const [k, x] of Object.entries(v)) $('tr' + k).value = x;
+}
+$('preScratch').onclick = () => preset('scratch'); $('preFine').onclick = () => preset('fine');
+$('trGo').onclick = guard('trMsg', async () => {
+  const m = trMode(), num = id => +$(id).value;
+  const body = { dataset: $('trData').value, mode: m, run: m === 'resume' ? $('trRunSel').value : $('trRun').value.trim(), base: $('trBase').value, checkpoint: $('trCkpt').value,
+    batch_size: num('trBatch'), max_epochs: num('trEpochs'), precision: $('trPrec').value, val_every: num('trVal'), sample_every: num('trSample'),
+    quality: m === 'resume' ? '' : $('trQuality').value, save_every: num('trSave'), keep_every: num('trKeep'), num_workers: num('trWorkers'), log_every: num('trLog'), seed: num('trSeed') };
+  if (!body.dataset) throw new Error('Pick a dataset (it needs a split).');
+  if (!body.run) throw new Error('Name the run.');
+  const j = await api('/train', 'POST', body);
+  say('trMsg', 'Started.'); store.set('trainerRun', body.run); $('mRun').dataset.want = body.run; show('monitor');
+});
+
+// ============================ MONITOR ============================
+let monTimer = null, logSince = 0, logJob = '';
+async function loadMonitor() {
+  const runs = await api('/runs'); runsCache = runs;
+  const want = $('mRun').dataset.want || $('mRun').value || store.get('trainerRun') || (runs.find(r => r.running) || runs[0] || {}).name;
+  $('mRun').innerHTML = runs.map(r => `<option ${r.running ? 'style="font-weight:bold"' : ''}>${esc(r.name)}</option>`).join('');
+  if (want && runs.some(r => r.name === want)) $('mRun').value = want;
+  delete $('mRun').dataset.want;
+  await refreshMonitor(true);
+  clearInterval(monTimer); monTimer = setInterval(() => { if (tab === 'monitor') refreshMonitor(false); }, 5000);
+}
+$('mRun').onchange = () => { store.set('trainerRun', $('mRun').value); logJob = ''; refreshMonitor(true); };
+async function refreshMonitor(full) {
+  const run = $('mRun').value; if (!run) { $('mProg').textContent = 'No runs yet.'; return; }
+  let m; try { m = await api(`/runs/${run}/metrics`); } catch (e) { $('mProg').textContent = e.message; return; }
+  const p = m.progress, st = m.start || {}, job = m.running[0];
+  $('mBadge').innerHTML = job ? '<span class="tag ok">training</span>' : (m.last_activity && Date.now() / 1000 - m.last_activity < 120 ? '<span class="tag warn">active elsewhere</span>' : '<span class="tag">idle</span>');
+  $('mStop').style.display = job ? '' : 'none'; $('mStop').dataset.job = job ? job.id : '';
+  const epoch = p ? p.epoch : (m.train.length ? m.train[m.train.length - 1].epoch : null), maxe = st.max_epochs;
+  $('mProg').innerHTML = `<div class="row"><span>Epoch <b>${epoch ?? '–'}</b>${maxe ? ' / ' + maxe : ''}</span>${p ? `<span class="mut">batch ${p.batch}/${p.batches}</span>` : ''}</div>
+    <div class="bar"><i style="width:${epoch && maxe ? Math.min(100, epoch / maxe * 100) : 0}%"></i></div>`;
+  const lastT = m.train[m.train.length - 1], lastV = m.val[m.val.length - 1];
+  $('mStats').innerHTML = [['dataset', m.dataset || '–'], ['gen loss', fmt(lastT && lastT.g, 2)], ['val loss', fmt(lastV && lastV.loss, 2)], ['step', p ? p.step : (lastT ? lastT.step : '–')],
+    ['sec / epoch', m.sec_per_epoch ? Math.round(m.sec_per_epoch) : '–'], ['ETA', job ? dur(m.eta_sec) : '–'], ['batch / precision', st.batch_size ? `${st.batch_size} / ${st.precision}` : '–']]
+    .map(([l, v]) => `<div class="stat"><b>${esc(v)}</b><span>${l}</span></div>`).join('');
+  const series = k => m.train.map(r => [r.epoch + (r.step ? 0 : 0), r[k]]).filter(x => x[1] != null);
+  $('mCharts').innerHTML = ['g', 'mel', 'kl', 'dur', 'fm', 'adv', 'd'].map((k, i) => lineChart({ g: 'generator total', mel: 'mel', kl: 'kl', dur: 'duration', fm: 'feature match', adv: 'adversarial', d: 'discriminator' }[k], series(k), COLORS[i])).join('')
+    + lineChart('validation loss', m.val.map(r => [r.epoch, r.loss]), '#c92a2a');
+  // export box
+  const cur = $('xCkpt').value;
+  $('xCkpt').innerHTML = m.checkpoints.map(c => `<option>${esc(c.file)}</option>`).join(''); if (cur) $('xCkpt').value = cur;
+  if (!$('xName').value) $('xName').value = `${run}_${($('xCkpt').value || 'last').replace('.ckpt', '').replace('epoch-', 'e')}`;
+  $('xGo').dataset.dataset = m.dataset || '';
+  if (full) await loadSamples(run);
+  if (job) tailLog(job.id, full); else if (full) $('mLog').textContent = 'This run is not training from this app. Metrics above come from metrics.jsonl.';
+}
+$('xCkpt').onchange = () => { $('xName').value = `${$('mRun').value}_${$('xCkpt').value.replace('.ckpt', '').replace('epoch-', 'e')}`; };
+async function loadSamples(run) {
+  const eps = await api(`/runs/${run}/samples`);
+  $('mEpoch').innerHTML = eps.map(e => `<option value="${e.dir}">epoch ${e.epoch} (${e.files.length})</option>`).join('');
+  window._eps = eps; showSamples();
+}
+function showSamples() {
+  const e = (window._eps || []).find(x => x.dir === $('mEpoch').value), run = $('mRun').value;
+  $('mSamples').innerHTML = e ? e.files.map(f => `<div class="row"><span class="mut" style="width:70px">${esc(f)}</span><audio controls preload="none" src="/api/runs/${run}/samples/${e.dir}/${f}"></audio></div>`).join('') : 'No samples yet.';
+}
+$('mEpoch').onchange = showSamples;
+$('mStop').onclick = guard('xMsg', async () => { if (confirm('Stop training now? Progress since the last last.ckpt save is lost.')) { await api(`/jobs/${$('mStop').dataset.job}/stop`, 'POST'); setTimeout(() => refreshMonitor(true), 2500); } });
+async function tailLog(jid, reset) {
+  if (jid !== logJob || reset) { logJob = jid; logSince = 0; $('mLog').textContent = ''; }
+  try {
+    const r = await api(`/jobs/${jid}/log?since=${logSince}`); logSince = r.next;
+    if (r.text) { const el = $('mLog'), atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 30; el.textContent += r.text; if (atEnd) el.scrollTop = el.scrollHeight; }
+  } catch {}
+}
+$('xGo').onclick = guard('xMsg', async () => {
+  const run = $('mRun').value, name = $('xName').value.trim();
+  const body = { checkpoint: $('xCkpt').value, name, dataset: $('xGo').dataset.dataset };
+  const r = await api(`/runs/${run}/export`, 'POST', body).catch(async e => { if (/already exists/.test(e.message) && confirm(e.message + ' Replace it?')) return api(`/runs/${run}/export`, 'POST', { ...body, overwrite: true }); throw e; });
+  say('xMsg', 'Converting… see Jobs.'); watchJob(r.id, false);
+});
+
+// ============================ RUNS ============================
+async function loadRuns() {
+  const runs = await api('/runs'); runsCache = runs;
+  $('runRows').innerHTML = runs.map(r => `<tr><td><b>${esc(r.name)}</b> ${r.running ? '<span class="tag ok">training</span>' : ''}</td><td>${r.quality ?? '–'}</td><td class="r">${r.epoch ?? '–'}</td><td class="r">${fmt(r.val_loss, 2)}</td>
+    <td class="r">${r.checkpoints.length}</td><td class="r">${r.size_mb >= 1000 ? (r.size_mb / 1000).toFixed(1) + ' GB' : r.size_mb + ' MB'}</td><td>${ago(r.last_activity)}</td>
+    <td style="white-space:nowrap"><button class="sm" data-a="mon" data-n="${esc(r.name)}">Monitor</button> <button class="sm" data-a="ck" data-n="${esc(r.name)}">Checkpoints</button> <button class="sm danger" data-a="del" data-n="${esc(r.name)}" ${r.running ? 'disabled' : ''}>Delete</button></td></tr>
+    <tr class="ckrow" id="ck-${esc(r.name)}" style="display:none"><td colspan="8"></td></tr>`).join('') || '<tr><td colspan="8" class="mut">No runs.</td></tr>';
+}
+$('runRows').onclick = guard('runMsg', async e => {
+  const b = e.target.closest('button'); if (!b) return; const n = b.dataset.n;
+  if (b.dataset.a === 'mon') { $('mRun').dataset.want = n; store.set('trainerRun', n); show('monitor'); }
+  else if (b.dataset.a === 'del') {
+    const r = runsCache.find(x => x.name === n);
+    if (confirm(`Permanently delete run "${n}" (${r.checkpoints.length} checkpoints, ${r.size_mb} MB)?`)) { await api('/runs/' + n, 'DELETE'); say('runMsg', `Deleted ${n}.`); loadRuns(); }
+  } else if (b.dataset.a === 'ck') {
+    const row = $('ck-' + n), r = runsCache.find(x => x.name === n); row.style.display = row.style.display === 'none' ? '' : 'none';
+    row.firstElementChild.innerHTML = r.checkpoints.map(c => `<div class="row"><span style="width:180px">${esc(c.file)}</span><span class="mut" style="width:90px">${c.size_mb} MB</span><span class="mut" style="width:110px">${ago(c.modified)}</span>
+      <button class="sm" data-a="exp" data-n="${esc(n)}" data-f="${esc(c.file)}">Export to voice…</button> <button class="sm" data-a="resume" data-n="${esc(n)}" data-f="${esc(c.file)}">Resume…</button> <button class="sm" data-a="finetune" data-n="${esc(n)}" data-f="${esc(c.file)}">Fine-tune from…</button> <button class="sm danger" data-a="rmck" data-n="${esc(n)}" data-f="${esc(c.file)}">Delete</button></div>`).join('') || '<span class="mut">No checkpoints.</span>';
+  } else if (b.dataset.a === 'rmck') { if (confirm(`Delete ${n}/${b.dataset.f}?`)) { await api(`/runs/${n}/checkpoints/${b.dataset.f}`, 'DELETE'); loadRuns(); } }
+  else if (b.dataset.a === 'exp') {
+    const name = prompt('Voice name for voices/ :', `${n}_${b.dataset.f.replace('.ckpt', '').replace('epoch-', 'e')}`); if (!name) return;
+    const body = { checkpoint: b.dataset.f, name };
+    const r = await api(`/runs/${n}/export`, 'POST', body).catch(async err => { if (/already exists/.test(err.message) && confirm(err.message + ' Replace it?')) return api(`/runs/${n}/export`, 'POST', { ...body, overwrite: true }); throw err; });
+    watchJob(r.id, false);
+  } else if (b.dataset.a === 'resume') { await show('train'); document.querySelector('input[name=trmode][value=resume]').checked = true; trModeChanged(); $('trRunSel').value = n; trRunChanged(); $('trCkpt').value = b.dataset.f; }
+  else if (b.dataset.a === 'finetune') { await show('train'); document.querySelector('input[name=trmode][value=finetune]').checked = true; trModeChanged(); $('trBase').value = `${n}/${b.dataset.f}`; }
+});
+
+// ============================ JOBS ============================
+let jobLog = '', jobSince = 0, jobTimer = null;
+function watchJob(id, go = true) { jobLog = id; jobSince = 0; $('jobLog').textContent = ''; if (go) show('jobs'); }
+function renderJobs(js) {
+  $('jobRows').innerHTML = js.map(j => `<tr class="${j.id === jobLog ? 'sel' : ''}"><td class="mut">${new Date(j.started * 1000).toLocaleString()}</td><td>${esc(j.label)}${j.steps > 1 && j.status === 'running' ? ` <span class="mut">(step ${j.step + 1}/${j.steps})</span>` : ''}</td>
+    <td><span class="tag ${j.status === 'done' ? 'ok' : j.status === 'running' ? 'warn' : j.status === 'failed' ? 'bad' : ''}">${j.status}</span></td>
+    <td style="white-space:nowrap"><button class="sm" data-a="log" data-id="${j.id}">Log</button> ${j.status === 'running' ? `<button class="sm danger" data-a="stop" data-id="${j.id}">Stop</button>` : `<button class="sm" data-a="rm" data-id="${j.id}">Remove</button>`}</td></tr>`).join('') || '<tr><td colspan="4" class="mut">No jobs yet.</td></tr>';
+}
+async function loadJobs() {
+  const js = await api('/jobs'); renderJobs(js);
+  if (!jobLog && js.length) { jobLog = js[0].id; jobSince = 0; $('jobLog').textContent = ''; renderJobs(js); }
+  $('jobLogBox').style.display = jobLog ? '' : 'none';
+  clearInterval(jobTimer); jobTimer = setInterval(() => { if (tab === 'jobs') pollJob(); }, 2000); pollJob();
+}
+async function pollJob() {
+  if (!jobLog) return;
+  try {
+    const r = await api(`/jobs/${jobLog}/log?since=${jobSince}`); jobSince = r.next;
+    $('jobLogTitle').textContent = `${r.job.label} — ${r.job.status}`;
+    if (r.text) { const el = $('jobLog'), atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 30; el.textContent += r.text; if (atEnd) el.scrollTop = el.scrollHeight; }
+    api('/jobs').then(renderJobs);
+    if (r.job.status !== 'running') clearInterval(jobTimer);
+  } catch {}
+}
+$('jobRows').onclick = guard('jobMsg', async e => {
+  const b = e.target.closest('button'); if (!b) return; const id = b.dataset.id;
+  if (b.dataset.a === 'log') { jobLog = id; jobSince = 0; $('jobLog').textContent = ''; loadJobs(); }
+  else if (b.dataset.a === 'stop') { if (confirm('Stop this job?')) { await api(`/jobs/${id}/stop`, 'POST'); setTimeout(loadJobs, 1500); } }
+  else if (b.dataset.a === 'rm') { await api('/jobs/' + id, 'DELETE'); if (jobLog === id) jobLog = ''; loadJobs(); }
+});
+
+// ---------- boot ----------
+pmodeChanged();
+refreshSys(); setInterval(refreshSys, 10000);
+show(store.get('trainerTab') || 'datasets');
+</script>
+</body>
+</html>

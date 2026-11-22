@@ -1,0 +1,74 @@
+diff --git a/dictsource/en_rules b/dictsource/en_rules
+index 75da1e97..4f52762a 100644
+--- a/dictsource/en_rules
++++ b/dictsource/en_rules
+@@ -28,6 +28,7 @@
+ // ?6  'one' = [wVn], 'of' = [Vv] (now uses phoneme [02])
+ // ?7  Scottish
+ // ?8  Use full vowel, not schwa in some word endings
++// ?9  Australian (en-au)
+ 
+ 
+ // Group Y, vowels + y
+@@ -765,7 +766,9 @@
+      _) am (_      %am
+     D_) am (_      ,eI'Em
+    D__) am (_      ,eI'Em
++?9    C) am (d      am      // en-au: demand, command (flat TRAP)
+      C) am (d      aam
++?9    B) am (pl     am      // en-au: example, sample
+      B) am (pl     aam
+      l) am (pl     am
+      _) am (orC    a#m
+@@ -827,17 +830,21 @@
+      _) anaesthe (tic an@sT'E
+      _) anaesth (esia an@sT
+     ph) an (age    @n
++?9    C) an (c      an      // en-au: dance, chance, advance, branch
+      C) an (c      aan
+      c) an (c      an
+      f) an (c      an
+      n) an (c      an
+      p) an (c      an
+     ch) an (dra    Vn
++?9   @m) an (d      an      // en-au: demand
+     @m) an (d      aan
+     @m) an (dy     @n
++?9  _sl) an (d      an      // en-au: slander
+    _sl) an (d      aan
+      m) an (ge     eIn
+      _) anecdo     anIkdoU
++?9    C) an (t      an      // en-au: plant, grant, chant
+      C) an (t      aan
+      C) an (tast   an
+         an (ath    a#n
+@@ -894,6 +901,7 @@
+      &) an (ce_$w_alt1 an
+ ?8   &) an (ce_    a#n
+    fin) an (c      'an
++?9    h) an (ce_    an      // en-au: enhance
+      h) an (ce_    aan
+      &) an (cy     @n
+    adv) an (c      an
+@@ -960,6 +968,7 @@ propag) an (d      'an
+     tr) an (si     an
+     tr) ansis      anz'Is
+     tr) an (som    an
++?9       answ (er   ans     // en-au: answer
+         answ (er   aans
+      _) ante (C    antI
+         ante (nn   ant'E
+diff --git a/phsource/phonemes b/phsource/phonemes
+index dc299740..ba262afd 100644
+--- a/phsource/phonemes
++++ b/phsource/phonemes
+@@ -1901,6 +1901,9 @@ include ph_english_n
+ phonemetable en-rp en
+ include ph_english_rp
+ 
++phonemetable en-au en-rp
++include ph_english_au
++
+ phonemetable en-sc en
+ include ph_english_sc
+ 

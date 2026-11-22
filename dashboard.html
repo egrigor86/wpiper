@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wpiper Dashboard</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#1c2128;--mut:#667085;--line:#e1e4ea;--acc:#2f6fed;--acc-fg:#fff;--bad:#c62828;--ok:#1b8a4b}
+@media (prefers-color-scheme:dark){:root{--bg:#14171c;--card:#1d2128;--fg:#e6e9ee;--mut:#97a0ae;--line:#2c323c;--acc:#5b93ff;--acc-fg:#0b1220;--bad:#ff6b6b;--ok:#4cc38a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,Segoe UI,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--card)}
+header h1{font-size:17px;margin:0}
+.nav{display:flex;flex-wrap:wrap;gap:2px}
+.nav a{padding:5px 10px;border-radius:7px;color:var(--mut);text-decoration:none;font-size:13px}
+.nav a:hover{background:var(--bg);color:var(--fg)}
+.nav a[aria-current]{background:var(--bg);color:var(--fg);font-weight:600}
+.status{color:var(--mut);font-size:13px;display:flex;flex-wrap:wrap;gap:4px 14px;flex:1}
+main{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:16px}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+h2{font-size:15px;margin:0 0 12px}
+label{display:block;font-size:13px;color:var(--mut);margin-bottom:4px}
+textarea,input[type=text],input[type=password],input[type=number],select{width:100%;padding:8px 10px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:7px;font:inherit}
+textarea{min-height:90px;resize:vertical}
+button{padding:8px 14px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:inherit;cursor:pointer}
+button.primary{background:var(--acc);color:var(--acc-fg);border-color:var(--acc)}
+button.danger{color:var(--bad)}
+button:disabled{opacity:.5;cursor:default}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:12px 0}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.val{float:right;color:var(--fg)}
+input[type=range]{width:100%}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--mut);font-weight:500;font-size:12px}
+td.btns{white-space:nowrap;text-align:right}
+td.btns button{padding:3px 9px;font-size:13px}
+.tbl{overflow-x:auto}
+.tag{font-size:11px;padding:1px 7px;border-radius:9px;border:1px solid var(--line);color:var(--mut)}
+.tag.on{color:var(--ok);border-color:var(--ok)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:14px}
+.card{border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px}
+.card audio{width:100%;margin:6px 0}
+.card .meta{color:var(--mut)}
+.msg{font-size:13px;margin-top:8px;min-height:18px}
+.msg.err{color:var(--bad)}
+.checks{display:flex;flex-wrap:wrap;gap:6px 14px}
+.checks label{display:flex;gap:5px;align-items:center;color:var(--fg);margin:0}
+.bars div{display:grid;grid-template-columns:130px 1fr 40px;gap:8px;align-items:center;font-size:13px;margin:3px 0}
+.bars i{display:block;height:8px;background:var(--acc);border-radius:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>wpiper TTS</h1>
+  <nav class="nav"><a href="/" aria-current="page">Dashboard</a><a href="/audiobook">Audiobook maker</a><a href="/audiobook/player">Player</a></nav>
+  <div class="status" id="status">connecting…</div>
+  <input type="password" id="adminKey" placeholder="admin key (if set)" style="width:170px">
+</header>
+<main>
+
+<section>
+  <h2>Test</h2>
+  <label for="text">Text</label>
+  <textarea id="text">Hello there, this is a quick test of the voice. How does it sound?</textarea>
+  <div class="row">
+    <div><label>Voice</label><select id="voice"></select></div>
+    <div><label>Format</label><select id="format"><option>wav</option><option>mp3</option><option>opus</option><option>flac</option></select></div>
+    <div><label>Seed (optional)</label><input type="number" id="seed" placeholder="random"></div>
+  </div>
+  <div class="row">
+    <div><label>Speed <span class="val" id="speedV"></span></label><input type="range" id="speed" min="0.5" max="2" step="0.05" value="1"></div>
+    <div><label>noise_scale <span class="val" id="nsV"></span></label><input type="range" id="ns" min="0" max="1.5" step="0.01" value="0.667"></div>
+    <div><label>noise_w (pacing) <span class="val" id="nwV"></span></label><input type="range" id="nw" min="0" max="1.5" step="0.01" value="0.8"></div>
+  </div>
+  <div class="actions">
+    <button class="primary" id="speak">Speak (Ctrl+Enter)</button>
+    <button id="sweep" title="Render noise_w 0, 0.4, 0.8, 1.2">Sweep noise_w</button>
+    <button id="compare" title="Render with every ticked voice below">Compare voices</button>
+    <button id="resetDefaults" title="Use the selected voice's own defaults">Voice defaults</button>
+    <button id="clear">Clear results</button>
+  </div>
+  <details style="margin-top:12px"><summary style="cursor:pointer;color:var(--mut);font-size:13px">Voices for compare</summary><div class="checks" id="cmpVoices" style="margin-top:8px"></div></details>
+  <div class="msg" id="testMsg"></div>
+  <div class="cards" id="results"></div>
+</section>
+
+<section>
+  <h2>Voices</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Name</th><th>Rate</th><th>espeak</th><th>Size</th><th>State</th><th></th></tr></thead>
+    <tbody id="voiceRows"></tbody>
+  </table></div>
+  <div class="actions" style="margin-top:12px">
+    <button id="reload">Rescan / unload all</button>
+    <span class="msg" id="voiceMsg" style="margin:0"></span>
+  </div>
+</section>
+
+<section>
+  <h2>Add a model</h2>
+  <div class="row">
+    <div><label>Name</label><input type="text" id="upName" placeholder="my_voice"></div>
+    <div><label>.onnx.json (config)</label><input type="file" id="upJson" accept=".json"></div>
+    <div><label>.onnx (model)</label><input type="file" id="upOnnx" accept=".onnx"></div>
+  </div>
+  <div class="actions"><button class="primary" id="upload">Upload &amp; validate</button></div>
+  <div class="msg" id="upMsg"></div>
+  <h2 style="margin-top:20px">Convert a checkpoint from <code>runs/</code></h2>
+  <div class="row">
+    <div style="grid-column:span 2"><label>Checkpoint (newest first)</label><select id="ckpt"></select></div>
+    <div><label>New voice name</label><input type="text" id="cvName" placeholder="myvoice_e260"></div>
+  </div>
+  <div class="actions"><button class="primary" id="convert">Convert to ONNX</button><button id="ckptRefresh">Refresh list</button></div>
+  <div class="msg" id="cvMsg" style="white-space:pre-wrap"></div>
+</section>
+
+<section>
+  <h2>Usage</h2>
+  <div class="bars" id="usage">no data</div>
+</section>
+
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const store = { get(k){ try { return localStorage.getItem(k) || '' } catch { return '' } },
+                set(k,v){ try { localStorage.setItem(k,v) } catch {} } };
+// One admin key for the dashboard, audiobook maker and player (older 'wpiperKey' is carried over).
+const KEY_STORE = 'wpiper_admin_key';
+$('adminKey').value = store.get(KEY_STORE) || store.get('wpiperKey');
+$('adminKey').onchange = e => { store.set(KEY_STORE, e.target.value); refresh(); };
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const adminHeaders = () => $('adminKey').value ? { 'X-Admin-Key': $('adminKey').value } : {};
+async function admin(path, opts = {}) {
+  const r = await fetch('/admin' + path, { ...opts, headers: { ...adminHeaders(), ...(opts.headers || {}) } });
+  if (!r.ok) {
+    let d = r.statusText;
+    try { const j = await r.json(); d = typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail); } catch {}
+    throw new Error(r.status === 401 ? 'Admin key required — enter it at the top right.' : d);
+  }
+  return r.json();
+}
+function say(id, text, err) { const e = $(id); e.textContent = text; e.classList.toggle('err', !!err); }
+
+// ---- sliders ----
+const sliders = { speed: 'speedV', ns: 'nsV', nw: 'nwV' };
+for (const [id, vid] of Object.entries(sliders)) {
+  $(id).oninput = () => $(vid).textContent = (+$(id).value).toFixed(id === 'speed' ? 2 : 2);
+  $(id).oninput();
+}
+let voices = [];
+function applyVoiceDefaults() {
+  const v = voices.find(v => v.name === $('voice').value);
+  const d = (v && v.defaults) || {};
+  $('ns').value = d.noise_scale ?? 0.667; $('nw').value = d.noise_w ?? 0.8; $('speed').value = 1;
+  Object.keys(sliders).forEach(k => $(k).oninput());
+}
+$('resetDefaults').onclick = applyVoiceDefaults;
+$('voice').onchange = applyVoiceDefaults;
+
+// ---- synthesis ----
+async function render(voice, over = {}) {
+  const body = { input: $('text').value, voice, response_format: $('format').value,
+                 speed: +$('speed').value, noise_scale: +$('ns').value, noise_w: +$('nw').value, ...over };
+  if ($('seed').value !== '') body.seed = +$('seed').value;
+  const t0 = performance.now();
+  const r = await fetch('/v1/audio/speech', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) { let d = r.statusText; try { d = (await r.json()).detail } catch {} throw new Error(typeof d === 'string' ? d : JSON.stringify(d)); }
+  const blob = await r.blob();
+  const secs = (performance.now() - t0) / 1000;
+  addCard(blob, body, r.headers.get('X-Voice') || voice, secs);
+}
+function addCard(blob, body, voice, secs) {
+  const url = URL.createObjectURL(blob), ext = body.response_format;
+  const el = document.createElement('div'); el.className = 'card';
+  el.innerHTML = `<b>${esc(voice)}</b><audio controls src="${url}"></audio>
+    <div class="meta">speed ${body.speed} · ns ${body.noise_scale} · nw ${body.noise_w}${body.seed != null ? ' · seed ' + body.seed : ''}<br>
+    ${(blob.size / 1024).toFixed(0)} KB · ${secs.toFixed(2)}s round trip · <a href="${url}" download="${esc(voice)}.${ext}">download</a></div>`;
+  $('results').prepend(el);
+  el.querySelector('audio').play().catch(() => {});
+}
+async function run(label, jobs) {
+  if (!$('text').value.trim()) return say('testMsg', 'Enter some text first.', true);
+  document.querySelectorAll('.actions button').forEach(b => b.disabled = true);
+  say('testMsg', label + '…');
+  try { for (const j of jobs) await render(...j); say('testMsg', 'Done.'); await refresh(); }
+  catch (e) { say('testMsg', e.message, true); }
+  document.querySelectorAll('.actions button').forEach(b => b.disabled = false);
+}
+$('speak').onclick = () => run('Rendering', [[$('voice').value]]);
+$('sweep').onclick = () => run('Sweeping noise_w', [0, 0.4, 0.8, 1.2].map(nw => [$('voice').value, { noise_w: nw }]));
+$('compare').onclick = () => {
+  const names = [...document.querySelectorAll('#cmpVoices input:checked')].map(c => c.value);
+  if (!names.length) return say('testMsg', 'Tick at least one voice under "Voices for compare".', true);
+  run('Comparing ' + names.length + ' voices', names.map(n => [n]));
+};
+$('clear').onclick = () => { $('results').innerHTML = ''; };
+$('text').addEventListener('keydown', e => { if (e.ctrlKey && e.key === 'Enter') $('speak').click(); });
+
+// ---- voice table ----
+function renderVoices() {
+  const cur = $('voice').value;
+  $('voice').innerHTML = voices.map(v => `<option>${esc(v.name)}</option>`).join('');
+  const def = voices.find(v => v.default);
+  $('voice').value = voices.some(v => v.name === cur) ? cur : (def ? def.name : '');
+  const ticked = new Set([...document.querySelectorAll('#cmpVoices input:checked')].map(c => c.value));
+  $('cmpVoices').innerHTML = voices.map(v => `<label><input type="checkbox" value="${esc(v.name)}" ${ticked.has(v.name) ? 'checked' : ''}>${esc(v.name)}</label>`).join('');
+  $('voiceRows').innerHTML = voices.map(v => `<tr>
+    <td><b>${esc(v.name)}</b></td><td>${v.sample_rate ?? '?'}</td><td>${esc(v.espeak ?? v.error ?? '?')}</td><td>${v.size_mb} MB</td>
+    <td>${v.default ? '<span class="tag on">default</span> ' : ''}${v.loaded ? '<span class="tag on">loaded</span>' : '<span class="tag">idle</span>'}</td>
+    <td class="btns">
+      <button data-a="default" data-n="${esc(v.name)}" ${v.default ? 'disabled' : ''}>Set default</button>
+      <button data-a="rename" data-n="${esc(v.name)}">Rename</button>
+      <button data-a="delete" data-n="${esc(v.name)}" class="danger">Delete</button>
+    </td></tr>`).join('') || '<tr><td colspan="6">No voices found.</td></tr>';
+}
+$('voiceRows').onclick = async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const n = b.dataset.n, post = (p, o) => admin(p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(o) });
+  try {
+    if (b.dataset.a === 'default') await post('/default', { name: n });
+    else if (b.dataset.a === 'rename') {
+      const nn = prompt('New name for ' + n, n); if (!nn || nn === n) return;
+      await post('/rename', { name: n, new: nn });
+    } else if (b.dataset.a === 'delete') {
+      if (!confirm(`Permanently delete voice "${n}" (.onnx and .onnx.json)?`)) return;
+      await admin('/voices/' + encodeURIComponent(n), { method: 'DELETE' });
+    }
+    say('voiceMsg', 'Done.'); await refresh();
+  } catch (err) { say('voiceMsg', err.message, true); }
+};
+$('reload').onclick = async () => {
+  try { await admin('/reload', { method: 'POST' }); say('voiceMsg', 'Rescanned.'); await refresh(); }
+  catch (err) { say('voiceMsg', err.message, true); }
+};
+
+// ---- upload ----
+$('upload').onclick = async () => {
+  const name = $('upName').value.trim(), js = $('upJson').files[0], onnx = $('upOnnx').files[0];
+  if (!name || !js || !onnx) return say('upMsg', 'Give a name and pick both files.', true);
+  if (voices.some(v => v.name === name) && !confirm(`"${name}" exists and will be replaced. Continue?`)) return;
+  $('upload').disabled = true;
+  try {
+    say('upMsg', 'Uploading config…');
+    await admin(`/voices/${encodeURIComponent(name)}/json`, { method: 'PUT', body: js });
+    say('upMsg', `Uploading model (${(onnx.size / 1e6).toFixed(0)} MB) and validating…`);
+    await admin(`/voices/${encodeURIComponent(name)}/onnx`, { method: 'PUT', body: onnx });
+    say('upMsg', `Added "${name}".`); await refresh();
+    $('voice').value = name; applyVoiceDefaults();
+  } catch (err) { say('upMsg', err.message, true); }
+  $('upload').disabled = false;
+};
+
+// ---- checkpoint conversion ----
+let ckpts = [];
+const suggest = c => (c.run + '_' + (c.file.replace(/\.ckpt$/, '').replace(/^epoch-/, 'e').replace(/^last$/, 'last'))).replace(/[^\w.-]/g, '_');
+async function loadCkpts() {
+  try {
+    ckpts = await admin('/checkpoints');
+    $('ckpt').innerHTML = ckpts.map((c, i) => `<option value="${i}" ${c.has_config ? '' : 'disabled'}>${esc(c.path)} · ${c.size_mb} MB · ${new Date(c.modified * 1000).toLocaleString()}${c.has_config ? '' : ' (no data/' + esc(c.run) + '/config.json)'}</option>`).join('') || '<option>No checkpoints in runs/</option>';
+    suggestName();
+  } catch (err) { say('cvMsg', err.message, true); }
+}
+function suggestName() { const c = ckpts[+$('ckpt').value]; if (c) $('cvName').value = suggest(c); }
+$('ckpt').onchange = suggestName;
+$('ckptRefresh').onclick = loadCkpts;
+$('convert').onclick = async () => {
+  const c = ckpts[+$('ckpt').value], name = $('cvName').value.trim();
+  if (!c || !name) return say('cvMsg', 'Pick a checkpoint and name the voice.', true);
+  const overwrite = voices.some(v => v.name === name);
+  if (overwrite && !confirm(`"${name}" exists and will be replaced. Continue?`)) return;
+  $('convert').disabled = true;
+  say('cvMsg', `Converting ${c.path} (this can take a minute)…`);
+  try {
+    await admin('/convert', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ checkpoint: c.path, name, overwrite }) });
+    say('cvMsg', `Created voice "${name}".`); await refresh();
+    $('voice').value = name; applyVoiceDefaults();
+  } catch (err) { say('cvMsg', err.message, true); }
+  $('convert').disabled = false;
+};
+
+// ---- status / usage ----
+async function refresh() {
+  try {
+    const [st, vs] = await Promise.all([admin('/status'), admin('/voices')]);
+    voices = vs; renderVoices();
+    $('status').innerHTML = `<span>${esc(st.providers.join(', '))}</span><span>${vs.length} voices · ${st.loaded.length} loaded</span><span>default: ${esc(st.default ?? 'none')}</span><span title="${esc(st.voices_dir)}">${esc(st.voices_dir)}</span>`;
+    if (!$('voice').dataset.init) { $('voice').dataset.init = 1; applyVoiceDefaults(); }
+  } catch (err) { $('status').textContent = err.message; }
+  try {
+    const u = await (await fetch('/logs/summary')).json(), ents = Object.entries(u.by_voice || {}).sort((a, b) => b[1] - a[1]);
+    const max = Math.max(1, ...ents.map(e => e[1]));
+    $('usage').innerHTML = ents.length ? `<div style="color:var(--mut)">Last ${u.entries} requests to /speak routes</div>` +
+      ents.map(([n, c]) => `<div><span>${esc(n)}</span><i style="width:${c / max * 100}%"></i><span>${c}</span></div>`).join('') : 'no data';
+  } catch {}
+}
+refresh();
+loadCkpts();
+</script>
+</body>
+</html>

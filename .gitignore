@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+/build/
+/dist/
+
+# Local environment
+/wpiper_venv/
+/.venv/
+
+# Your data and outputs (large, personal). Anchored to the repo root so
+# wpiper/espeak-ng-data/voices/ is NOT ignored.
+/voices/
+/data/
+/runs/
+/logs/
+/trainer_state/
+/audiobook_jobs/
+/tts_dataset*/
+/out/
+/backups/
+*.ckpt
+*.onnx
+*.onnx.json
+*.wav
+*.mp3
+*.m4b
+
+# Per-user settings written by the apps
+/trainer_gui_settings.json
+/server_config.json

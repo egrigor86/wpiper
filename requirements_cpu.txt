@@ -1,0 +1,23 @@
+# Everything wpiper needs: synthesis, audiobook maker, TTS server, trainer web app and GUI.
+# Tested on Windows 11 with Python 3.12 (64-bit). Install with the setup_wpiper_*.bat scripts or:
+#   pip install -r requirements_cpu.txt
+#   pip install -e . --no-deps
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.6.0
+numpy==2.4.6
+onnxruntime==1.23.2
+soundfile==0.14.0
+soxr==1.1.0
+librosa==0.11.0
+scipy==1.15.3
+numba==0.66.0
+llvmlite==0.48.0
+audioread==3.1.0
+pooch==1.9.0
+onnx==1.22.0
+fastapi==0.162.0
+uvicorn==0.54.0
+pydantic==2.14.3
+python-multipart==0.0.33
+psutil==7.2.2
+tensorboard==2.21.0

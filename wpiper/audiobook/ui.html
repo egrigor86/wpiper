@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wpiper Audiobook Maker</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#1c2128;--mut:#667085;--line:#e1e4ea;--acc:#2f6fed;--acc-fg:#fff;--bad:#c62828;--ok:#1b8a4b;--warn:#b26a00}
+@media (prefers-color-scheme:dark){:root{--bg:#14171c;--card:#1d2128;--fg:#e6e9ee;--mut:#97a0ae;--line:#2c323c;--acc:#5b93ff;--acc-fg:#0b1220;--bad:#ff6b6b;--ok:#4cc38a;--warn:#f0b24a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,Segoe UI,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--card)}
+header h1{font-size:17px;margin:0}
+.nav{display:flex;flex-wrap:wrap;gap:2px}
+.nav a{padding:5px 10px;border-radius:7px;color:var(--mut);text-decoration:none;font-size:13px}
+.nav a:hover{background:var(--bg);color:var(--fg)}
+.nav a[aria-current]{background:var(--bg);color:var(--fg);font-weight:600}
+.status{color:var(--mut);font-size:13px;display:flex;flex-wrap:wrap;gap:4px 14px;flex:1}
+main{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:16px}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+h2{font-size:15px;margin:0 0 12px}
+label{display:block;font-size:13px;color:var(--mut);margin-bottom:4px}
+textarea,input[type=text],input[type=password],input[type=number],select{width:100%;padding:8px 10px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:7px;font:inherit}
+textarea{min-height:170px;resize:vertical;font-size:14px}
+button{padding:8px 14px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:inherit;cursor:pointer}
+button.primary{background:var(--acc);color:var(--acc-fg);border-color:var(--acc)}
+button.danger{color:var(--bad)}
+button:disabled{opacity:.5;cursor:default}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:12px 0}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.checks{display:flex;flex-wrap:wrap;gap:6px 16px}
+.checks label{display:flex;gap:5px;align-items:center;color:var(--fg);margin:0}
+details{border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-top:10px}
+summary{cursor:pointer;font-size:14px}
+.hint{font-size:12px;color:var(--mut);margin-top:4px}
+.msg{font-size:13px;margin-top:8px;min-height:18px}
+.msg.err{color:var(--bad)}
+.tag{font-size:11px;padding:1px 8px;border-radius:9px;border:1px solid var(--line);color:var(--mut);white-space:nowrap}
+.tag.running{color:var(--acc);border-color:var(--acc)}
+.tag.done{color:var(--ok);border-color:var(--ok)}
+.tag.error{color:var(--bad);border-color:var(--bad)}
+.tag.interrupted,.tag.cancelled{color:var(--warn);border-color:var(--warn)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-weight:500;font-size:12px}
+.tbl{overflow-x:auto;max-height:340px;overflow-y:auto}
+.num{text-align:right;white-space:nowrap}
+.job{border:1px solid var(--line);border-radius:9px;padding:12px;margin-top:10px}
+.job .top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.job .top b{font-size:15px}
+.job .meta{color:var(--mut);font-size:13px;margin-top:4px}
+.bar{height:8px;background:var(--line);border-radius:4px;margin:8px 0 2px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc);transition:width .4s}
+.files{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:8px;font-size:13px}
+.files a{color:var(--acc);text-decoration:none}
+.job audio{width:100%;margin-top:8px}
+.kind{color:var(--mut);font-size:11px}
+.sp{flex:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>wpiper Audiobook Maker</h1>
+  <nav class="nav"><a href="/">Dashboard</a><a href="/audiobook" aria-current="page">Audiobook maker</a><a href="/audiobook/player">Player</a></nav>
+  <div class="status" id="status">connecting…</div>
+  <input type="password" id="adminKey" placeholder="admin key (if set)" style="width:170px">
+</header>
+<main>
+
+<section>
+  <h2>1. Book</h2>
+  <div class="row">
+    <div><label for="title">Title</label><input type="text" id="title" placeholder="My Audiobook"></div>
+    <div><label for="author">Author</label><input type="text" id="author"></div>
+    <div><label for="voice">Narrator voice</label><select id="voice"></select></div>
+  </div>
+  <div class="actions" style="margin-bottom:8px">
+    <button id="fileBtn" type="button">Load a .txt file…</button>
+    <input type="file" id="file" accept=".txt,.md,text/plain" hidden>
+    <span class="hint" id="counts">No text yet.</span>
+  </div>
+  <textarea id="text" placeholder="Paste the book text here, or load a file. Chapters are found from headings such as “Chapter 1”, PART I, a lone 1, 2, 3 …"></textarea>
+  <div id="bigNote" class="hint" hidden></div>
+</section>
+
+<section>
+  <h2>2. Output</h2>
+  <div class="checks" id="formats"></div>
+  <div class="hint" id="ffwarn"></div>
+  <div class="checks" style="margin-top:10px">
+    <label><input type="checkbox" id="split"> also one file per chapter</label>
+    <label><input type="checkbox" id="loudnorm"> normalise loudness (ffmpeg, encoded formats)</label>
+  </div>
+
+  <details>
+    <summary>Reading and pacing</summary>
+    <div class="row">
+      <div><label>Speaking speed <span id="speedVal">1.00×</span></label><input type="range" id="speed" min="0.7" max="1.4" step="0.05" value="1"></div>
+      <div><label for="noise_w">Rhythm variation (noise_w)</label><input type="number" id="noise_w" step="0.1" min="0" max="2" placeholder="voice default"></div>
+      <div><label for="noise_scale">Voice variation (noise_scale)</label><input type="number" id="noise_scale" step="0.05" min="0" max="2" placeholder="voice default"></div>
+    </div>
+    <div class="row">
+      <div><label for="pause_sentence">Pause after sentence (ms)</label><input type="number" id="pause_sentence" placeholder="350"></div>
+      <div><label for="pause_paragraph">Pause after paragraph (ms)</label><input type="number" id="pause_paragraph" placeholder="800"></div>
+      <div><label for="pause_chapter">Gap between chapters (ms)</label><input type="number" id="pause_chapter" placeholder="2000"></div>
+      <div><label for="pause_scale">Scale all pauses ×</label><input type="number" id="pause_scale" step="0.1" placeholder="1.0"></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Text rules</summary>
+    <div class="row">
+      <div><label for="max_words">Split sentences longer than (words)</label><input type="number" id="max_words" placeholder="60"></div>
+      <div><label for="wrap">Single line breaks</label>
+        <select id="wrap"><option value="auto">auto-detect</option><option value="hard">soft wraps (join lines)</option><option value="lines">real breaks (one line = one sentence)</option></select></div>
+      <div><label for="caps_headings">ALL-CAPS title lines</label>
+        <select id="caps_headings"><option value="auto">auto (chapters if no other headings)</option><option value="chapters">always chapters</option><option value="inline">spoken headings only</option><option value="off">ignore</option></select></div>
+      <div><label for="number_label">Word before a bare chapter number</label><input type="text" id="number_label" placeholder="Chapter"></div>
+    </div>
+    <div class="checks">
+      <label><input type="checkbox" id="speak_headings" checked> read chapter headings aloud</label>
+      <label><input type="checkbox" id="number_headings" checked> lone 1, 2, 3 / I, II, III lines are chapters</label>
+      <label><input type="checkbox" id="drop_page_numbers" checked> drop other lone numbers (page numbers)</label>
+    </div>
+  </details>
+
+  <details>
+    <summary>Advanced</summary>
+    <div class="row">
+      <div><label for="bitrate">Bitrate (mp3 / opus / m4b)</label><input type="text" id="bitrate" placeholder="e.g. 64k"></div>
+      <div><label for="threads">CPU threads (0 = all)</label><input type="number" id="threads" placeholder="0"></div>
+      <div><label for="srt_offset_ms">Subtitle offset (ms)</label><input type="number" id="srt_offset_ms" placeholder="0"></div>
+    </div>
+  </details>
+</section>
+
+<section>
+  <h2>3. Check, listen, build</h2>
+  <div class="actions">
+    <button id="previewBtn">Preview chapters &amp; sentences</button>
+    <button id="auditionBtn">Listen to the first sentences</button>
+    <span class="sp"></span>
+    <button id="buildBtn" class="primary">Build audiobook</button>
+  </div>
+  <audio id="audition" controls hidden style="width:100%;margin-top:10px"></audio>
+  <div class="msg" id="msg"></div>
+  <div id="previewOut"></div>
+</section>
+
+<section>
+  <h2>Jobs <span class="hint" id="cacheInfo"></span></h2>
+  <div id="jobs"><div class="hint">No jobs yet.</div></div>
+  <div class="actions" style="margin-top:12px"><button id="clearCache" class="danger">Clear rendered-sentence cache</button>
+    <span class="hint">Finished sentences are kept so a rebuild with different pauses or formats is quick.</span></div>
+</section>
+
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const API = '/audiobook/api';
+let bookText = '';
+let info = null;
+let pollTimer = null;
+const KEY_STORE = 'wpiper_admin_key';
+try { $('adminKey').value = localStorage.getItem(KEY_STORE) || localStorage.getItem('wpiperKey') || ''; } catch (e) {}
+$('adminKey').addEventListener('change', () => { try { localStorage.setItem(KEY_STORE, $('adminKey').value); } catch (e) {} init(); });
+
+const keyQ = () => $('adminKey').value ? '?key=' + encodeURIComponent($('adminKey').value) : '';
+async function api(path, opts = {}) {
+  const headers = Object.assign({'X-Admin-Key': $('adminKey').value}, opts.json ? {'Content-Type': 'application/json'} : {});
+  const res = await fetch(API + path, {method: opts.method || 'GET', headers, body: opts.json ? JSON.stringify(opts.json) : undefined});
+  if (!res.ok) {
+    let detail = res.statusText;
+    try { const j = await res.json(); detail = typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail); } catch (e) {}
+    throw new Error(detail);
+  }
+  return opts.blob ? res.blob() : res.json();
+}
+function say(text, err) { const m = $('msg'); m.textContent = text || ''; m.className = 'msg' + (err ? ' err' : ''); }
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtDur = s => { s = Math.max(0, Math.round(s)); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), x = s%60;
+  return (h ? h + 'h ' : '') + (h || m ? String(m).padStart(h ? 2 : 1, '0') + 'm ' : '') + String(x).padStart(h || m ? 2 : 1, '0') + 's'; };
+const fmtSize = b => b > 1e6 ? (b/1e6).toFixed(1) + ' MB' : Math.max(1, Math.round(b/1e3)) + ' KB';
+
+// ---------------------------------------------------------------- text input
+function updateCounts() {
+  const words = bookText.trim() ? bookText.trim().split(/\s+/).length : 0;
+  $('counts').textContent = words ? `${words.toLocaleString()} words, about ${(words/2.6/3600).toFixed(1)} h of audio` : 'No text yet.';
+}
+$('text').addEventListener('input', () => { bookText = $('text').value; updateCounts(); });
+$('fileBtn').onclick = () => $('file').click();
+$('file').onchange = async () => {
+  const f = $('file').files[0]; if (!f) return;
+  const raw = await f.text();
+  bookText = raw.replace(/^﻿/, '');
+  if (bookText.length > 2e6) {
+    $('text').value = bookText.slice(0, 20000) + '\n\n… (preview only; the whole file will be used)';
+    $('text').readOnly = true;
+    $('bigNote').hidden = false; $('bigNote').textContent = `Large file (${(bookText.length/1e6).toFixed(1)} M characters): only the start is shown here. Edit it elsewhere and reload to change it.`;
+  } else { $('text').value = bookText; $('text').readOnly = false; $('bigNote').hidden = true; }
+  if (!$('title').value) $('title').value = f.name.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ');
+  updateCounts(); $('file').value = '';
+};
+
+// ---------------------------------------------------------------- settings
+const NUM = ['max_words','pause_sentence','pause_paragraph','pause_chapter','pause_scale','noise_w','noise_scale','threads','srt_offset_ms'];
+const STR = ['wrap','caps_headings','number_label','bitrate'];
+const BOOL = ['speak_headings','number_headings','drop_page_numbers','loudnorm'];
+$('speed').oninput = () => $('speedVal').textContent = Number($('speed').value).toFixed(2) + '×';
+function settings() {
+  const s = {};
+  NUM.forEach(k => { const v = $(k).value; if (v !== '') s[k] = Number(v); });
+  STR.forEach(k => { const v = $(k).value; if (v !== '' && !(k === 'wrap' && v === 'auto') && !(k === 'caps_headings' && v === 'auto')) s[k] = v; });
+  BOOL.forEach(k => s[k] = $(k).checked);
+  const speed = Number($('speed').value); if (speed !== 1) s.length_scale = Number((1 / speed).toFixed(3));
+  return s;
+}
+const chosenFormats = () => [...document.querySelectorAll('#formats input:checked')].map(i => i.value);
+
+// ---------------------------------------------------------------- actions
+$('previewBtn').onclick = async () => {
+  if (!bookText.trim()) return say('Add some text first.', true);
+  say('Splitting…'); $('previewOut').innerHTML = '';
+  try {
+    const r = await api('/preview', {method: 'POST', json: {title: $('title').value, text: bookText, settings: settings(), limit: 120}});
+    say(`${r.chapters.length} chapter(s), ${r.units.toLocaleString()} sentences, ${r.words.toLocaleString()} spoken words, about ${r.estimated_hours} h` + (r.fragments ? `, ${r.fragments} long sentence piece(s)` : ''));
+    let h = '<h2 style="margin-top:14px">Chapters</h2><div class="tbl"><table><tr><th>#</th><th>Title</th><th class="num">Sentences</th><th class="num">Words</th></tr>' +
+      r.chapters.map((c, i) => `<tr><td>${i + 1}</td><td>${esc(c.title)}</td><td class="num">${c.units}</td><td class="num">${c.words}</td></tr>`).join('') + '</table></div>';
+    h += '<h2 style="margin-top:14px">First sentences as they will be spoken</h2><div class="tbl"><table><tr><th>Text</th><th>Spoken</th></tr>' +
+      r.sample.map(u => `<tr><td>${esc(u.text)}${u.kind !== 'sentence' ? ` <span class="kind">${u.kind}</span>` : ''}</td><td>${esc(u.spoken)}</td></tr>`).join('') + '</table></div>';
+    $('previewOut').innerHTML = h;
+  } catch (e) { say(e.message, true); }
+};
+
+$('auditionBtn').onclick = async () => {
+  if (!bookText.trim()) return say('Add some text first.', true);
+  say('Rendering the first sentences…'); $('auditionBtn').disabled = true;
+  try {
+    const blob = await api('/sample', {method: 'POST', blob: true, json: {voice: $('voice').value, text: bookText.slice(0, 5000), settings: settings()}});
+    const a = $('audition'); a.src = URL.createObjectURL(blob); a.hidden = false; a.play().catch(() => {}); say('');
+  } catch (e) { say(e.message, true); } finally { $('auditionBtn').disabled = false; }
+};
+
+$('buildBtn').onclick = async () => {
+  if (!bookText.trim()) return say('Add some text first.', true);
+  const formats = chosenFormats(); if (!formats.length) return say('Pick at least one output format.', true);
+  say('Queuing…'); $('buildBtn').disabled = true;
+  try {
+    const j = await api('/jobs', {method: 'POST', json: {title: $('title').value, author: $('author').value, voice: $('voice').value,
+      text: bookText, settings: settings(), formats, split_chapters: $('split').checked}});
+    say(`Queued “${j.title}”.`); poll();
+  } catch (e) { say(e.message, true); } finally { $('buildBtn').disabled = false; }
+};
+
+$('clearCache').onclick = async () => {
+  if (!confirm('Delete all rendered sentences? Finished audiobooks are not affected.')) return;
+  try { await api('/cache', {method: 'DELETE'}); cacheInfo(); } catch (e) { say(e.message, true); }
+};
+async function cacheInfo() { try { const c = await api('/cache'); $('cacheInfo').textContent = `· cache: ${c.clips.toLocaleString()} sentences, ${c.mb} MB`; } catch (e) {} }
+
+// ---------------------------------------------------------------- jobs
+const openJobs = new Set();
+function jobHtml(j) {
+  const pct = j.total ? Math.min(100, Math.round(100 * j.done / j.total)) : 0;
+  const running = j.status === 'running', waiting = j.status === 'queued';
+  let eta = '';
+  if (running && j.stage === 'synth' && j.done > 10) {
+    const el = Date.now() / 1000 - j.started, left = el / j.done * (j.total - j.done);
+    eta = ` · about ${fmtDur(left)} left`;
+  }
+  const stage = {synth: 'Speaking', assemble: 'Joining audio', encode: 'Encoding'}[j.stage] || (waiting ? 'Waiting' : '');
+  let h = `<div class="job" data-id="${j.id}"><div class="top"><b>${esc(j.title)}</b><span class="tag ${j.status}">${j.status}</span>
+    <span class="meta">${esc(j.voice)} · ${(j.request.formats || []).join(', ')}</span><span class="sp"></span>`;
+  if (running || waiting) h += `<button data-act="cancel">Cancel</button>`;
+  if (['interrupted', 'cancelled', 'error'].includes(j.status)) h += `<button data-act="resume" class="primary">Resume</button>`;
+  if (!running && !waiting) h += `<button data-act="delete" class="danger">Delete</button>`;
+  h += `</div>`;
+  if (running || waiting) h += `<div class="bar"><i style="width:${pct}%"></i></div><div class="meta">${stage}${j.total ? ` ${j.done.toLocaleString()} / ${j.total.toLocaleString()} (${pct}%)` : ''}${eta}</div>`;
+  if (j.error) h += `<div class="meta" style="color:var(--bad)">${esc(j.error)}</div>`;
+  if (j.status === 'done' && j.summary) {
+    const s = j.summary, took = j.finished - j.started;
+    h += `<div class="meta">${fmtDur(s.duration_seconds || 0)} of audio · ${s.chapters} chapter(s) · ${(s.units || 0).toLocaleString()} sentences · ${s.cues || 0} subtitle cues · built in ${fmtDur(took)}` +
+         (s.synth && s.synth.cached ? ` · ${s.synth.cached.toLocaleString()} sentences reused from cache` : '') + `</div>`;
+    h += `<div class="files" data-files="${j.id}">loading files…</div>`;
+  }
+  return h + '</div>';
+}
+async function fillFiles(id) {
+  const holder = document.querySelector(`[data-files="${id}"]`); if (!holder) return;
+  try {
+    const j = await api('/jobs/' + id);
+    const q = keyQ();
+    const link = f => `/audiobook/api/jobs/${id}/download/${f.path.split('/').map(encodeURIComponent).join('/')}${q}`;
+    const playable0 = j.files.some(f => /\.(mp3|wav|opus|flac|m4b)$/i.test(f.path));
+    const top = j.files.filter(f => !f.path.includes('/')), chap = j.files.filter(f => f.path.includes('/'));
+    holder.innerHTML = (playable0 ? `<a href="/audiobook/player?job=${id}${q ? '&' + q.slice(1) : ''}" target="_blank"><b>Open in player</b></a>` : '') + top.map(f => `<a href="${link(f)}" download>${esc(f.path)} (${fmtSize(f.size)})</a>`).join('') +
+      (chap.length ? `<details style="width:100%"><summary>${chap.length} chapter files</summary><div class="files">` + chap.map(f => `<a href="${link(f)}" download>${esc(f.path.replace('chapters/', ''))} (${fmtSize(f.size)})</a>`).join('') + '</div></details>' : '');
+    const playable = top.find(f => /\.(mp3|wav|opus|flac)$/i.test(f.path));
+    if (playable && !holder.parentElement.querySelector('audio')) {
+      const a = document.createElement('audio'); a.controls = true; a.preload = 'none'; a.src = link(playable); holder.after(a);
+    }
+  } catch (e) { holder.textContent = e.message; }
+}
+let lastSignature = '';
+async function poll() {
+  clearTimeout(pollTimer);
+  let list = [];
+  try { list = await api('/jobs'); } catch (e) { $('jobs').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; return; }
+  const active = list.some(j => j.status === 'running' || j.status === 'queued');
+  const sig = JSON.stringify(list.map(j => [j.id, j.status, j.done, j.total, j.stage, j.error]));
+  if (sig !== lastSignature) {
+    lastSignature = sig;
+    $('jobs').innerHTML = list.length ? list.map(jobHtml).join('') : '<div class="hint">No jobs yet.</div>';
+    list.filter(j => j.status === 'done').forEach(j => fillFiles(j.id));
+    cacheInfo();
+  }
+  pollTimer = setTimeout(poll, active ? 1500 : 6000);
+}
+$('jobs').addEventListener('click', async ev => {
+  const b = ev.target.closest('button[data-act]'); if (!b) return;
+  const id = b.closest('.job').dataset.id, act = b.dataset.act;
+  try {
+    if (act === 'delete') { if (!confirm('Delete this job and its output files?')) return; await api('/jobs/' + id, {method: 'DELETE'}); }
+    else await api(`/jobs/${id}/${act}`, {method: 'POST'});
+    lastSignature = ''; poll();
+  } catch (e) { say(e.message, true); }
+});
+
+// ---------------------------------------------------------------- start
+async function init() {
+  try {
+    info = await api('/info');
+    $('voice').innerHTML = info.voices.map(v => `<option value="${esc(v)}"${v === info.default ? ' selected' : ''}>${esc(v)}</option>`).join('');
+    const defaults = ['mp3'];
+    $('formats').innerHTML = info.formats.map(f => `<label><input type="checkbox" value="${f}" ${defaults.includes(f) ? 'checked' : ''}> ${f}${f === 'm4b' ? ' (chapters)' : ''}</label>`).join('');
+    const ff = info.ffmpeg;
+    $('status').textContent = `${info.voices.length} voice(s) · ${ff.found ? 'ffmpeg ready' : 'ffmpeg not found'} · ${info.providers.join(', ')}`;
+    $('ffwarn').textContent = ff.found ? '' : 'ffmpeg was not found, so only wav can be built. Install ffmpeg or set FFMPEG_EXE and restart the server.';
+    if (!ff.found) document.querySelectorAll('#formats input').forEach(i => { i.checked = i.value === 'wav'; if (i.value !== 'wav') i.disabled = true; });
+    poll();
+  } catch (e) { $('status').textContent = e.message; }
+}
+init(); updateCounts();
+</script>
+</body>
+</html>

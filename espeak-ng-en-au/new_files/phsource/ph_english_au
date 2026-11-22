@@ -1,0 +1,230 @@
+
+//*******************************************************************
+// General Australian English
+//
+// Inherits from en-rp (non-rhotic, BATH split, linking r) and
+// overrides the vowels that make the accent sound Australian:
+//
+//   FLEECE  i:  [əi]     GOOSE   u:  [ʉː]     FACE  eI  [æɪ]
+//   PRICE   aI  [ɑɪ]     GOAT    oU  [ɐʉ]     MOUTH aU  [æɔ]
+//   START   A:  [ɐː]     BATH    aa  [ɐː]     STRUT V   [ɐ]
+//   DRESS   E   [e]      THOUGHT O:  [oː]     LOT   0   [ɔ]
+//   SQUARE  e@  [eː]     CURE    U@  [ʉːə]    happY i   [i]
+//
+// Also flaps intervocalic t ("water", "city") as in en-us.
+//*******************************************************************
+
+
+//*******************************************************************
+// CONSONANTS
+//*******************************************************************
+
+phoneme t#    // flapped [t] as in "city", "water"
+  vcd alv stp
+  ipa ɾ
+  lengthmod 5
+  Vowelin f1=1  f2=1700 -300 300  f3=-100 80
+  Vowelout f1=2 f2=1700 -300 300  f3=-100 80
+
+  IF nextPh(isNotVowel) THEN
+    ChangePhoneme(t)
+  ENDIF
+
+  IF KlattSynth THEN
+    IF PreVoicing THEN
+      FMT(klatt/x_tap)
+    ENDIF
+    FMT(klatt/tap2) addWav(x/d, 70)
+  ENDIF
+
+  IF PreVoicing THEN
+    FMT(d/x_tap)
+  ENDIF
+  FMT(d/tap2) addWav(x/d, 50)
+endphoneme
+
+
+//*******************************************************************
+// SHORT VOWELS
+//*******************************************************************
+
+phoneme E     // DRESS: raised to [e]
+  vwl  starttype #e  endtype #e
+  ipa e
+  length 140
+  IF nextPhW(n) THEN
+    ChangeIfDiminished(@)
+  ELSE
+    ChangeIfDiminished(I2)
+  ENDIF
+  FMT(vowel/e)
+endphoneme
+
+
+phoneme V     // STRUT: open central [ɐ]
+  vwl  starttype #a  endtype #@
+  ipa ɐ
+  length 140
+  ChangeIfDiminished(@)
+  FMT(vowel/a#_2)
+endphoneme
+
+
+phoneme 0     // LOT: [ɔ]
+  vwl  starttype #o   endtype #o
+  ipa ɔ
+  length 140
+  ChangeIfDiminished(@)
+  FMT(vowel/0_3)
+endphoneme
+
+
+phoneme i     // happY: tense [i]
+  vwl  starttype #i  endtype #i
+  unstressed
+  ipa i
+  length 150
+  IfNextVowelAppend(;)
+  FMT(vowel/i)
+endphoneme
+
+
+//*******************************************************************
+// LONG VOWELS
+//*******************************************************************
+
+phoneme A:    // START: [ɐː]
+  vwl  starttype #a  endtype #a
+  ipa ɐː
+  length 230
+  IfNextVowelAppend(r-)
+  FMT(vowel/a#)
+endphoneme
+
+
+phoneme A@    // START before r: [ɐː]
+  vwl  starttype #a  endtype #a
+  ipa ɐː
+  length 230
+  IfNextVowelAppend(r-)
+  FMT(vowel/a#)
+endphoneme
+
+
+phoneme aa    // BATH: [ɐː]
+  vwl  starttype #a  endtype #a
+  ipa ɐː
+  length 210
+  FMT(vowel/a#)
+endphoneme
+
+
+phoneme i:    // FLEECE: onglide [əi]
+  vwl  starttype #@  endtype #i
+  ipa əi
+  length 190 lng
+  IfNextVowelAppend(;)
+  FMT(vdiph/@i)
+endphoneme
+
+
+phoneme u:    // GOOSE: fronted [ʉː]
+  vwl  starttype #u  endtype #u
+  ipa ʉː
+  length 200
+  FMT(vowel/u#)
+endphoneme
+
+
+phoneme O:    // THOUGHT: raised [oː]
+  vwl  starttype #o  endtype #o
+  ipa oː
+  length 230
+  ChangeIfDiminished(@)
+  IfNextVowelAppend(r-)
+  FMT(vowel/o)
+endphoneme
+
+
+phoneme O@    // NORTH/FORCE: [oː]
+  vwl  starttype #o  endtype #o
+  ipa oː
+  length 230
+  IfNextVowelAppend(r-)
+  FMT(vowel/o)
+endphoneme
+
+
+phoneme e@    // SQUARE: monophthong [eː]
+  vwl  starttype #e  endtype #e
+  ipa eː
+  length 230
+  IfNextVowelAppend(r-)
+  FMT(vowel/e_2)
+endphoneme
+
+
+phoneme U@    // CURE: [ʉːə]
+  vwl  starttype #u  endtype #@
+  ipa ʉːə
+  length 240
+  IfNextVowelAppend(r-)
+  FMT(vdiph2/u#@)
+endphoneme
+
+
+//*******************************************************************
+// DIPHTHONGS
+//*******************************************************************
+
+phoneme eI    // FACE: wide [æɪ]
+  vwl  starttype #a  endtype #i
+  ipa æɪ
+  length 230
+  FMT(vdiph/&i)
+endphoneme
+
+
+phoneme aI    // PRICE: backed [ɑɪ]
+  vwl  starttype #a  endtype #i
+  ipa ɑɪ
+  length 240
+  IF nextPh(#a) OR nextPh(#o) THEN
+    AppendPhoneme(;)
+  ENDIF
+  FMT(vdiph/aai)
+endphoneme
+
+
+phoneme oU    // GOAT: [ɐʉ]
+  vwl  starttype #a  endtype #u
+  ipa ɐʉ
+  length 230
+  FMT(vdiph/a#u)
+endphoneme
+
+
+phoneme aU    // MOUTH: fronted [æɔ]
+  vwl  starttype #a  endtype #o
+  ipa æɔ
+  length 240
+  FMT(vdiph/aoo)
+endphoneme
+
+
+phoneme aI@   // FIRE: [ɑɪə]
+  vwl  starttype #a  endtype #@
+  ipa ɑɪə
+  length 270
+  IfNextVowelAppend(r-)
+  FMT(vwl_en/aI@)
+endphoneme
+
+
+phoneme aU@   // HOUR: [æɔə]
+  vwl  starttype #a   endtype #@
+  ipa æɔə
+  length 270
+  IfNextVowelAppend(r-)
+  FMT(vwl_en_rp/aU@)
+endphoneme

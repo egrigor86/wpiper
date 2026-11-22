@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wpiper"
+version = "1.2.0"
+description = "Windows-native Piper (VITS) voice trainer, ONNX synthesizer, TTS server and audiobook maker, with an Australian English (en-AU) espeak voice."
+readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: Microsoft :: Windows",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
+# Synthesis and the audiobook maker need only these. Training and the servers are extras.
+dependencies = [
+    "numpy",
+    "onnxruntime",
+    "soundfile",
+]
+
+[project.urls]
+Homepage = "https://github.com/egrigor86/wpiper"
+"Pretrained voice" = "https://huggingface.co/Egrigor/wpiper-christopher"
+
+[project.optional-dependencies]
+server = ["fastapi", "uvicorn", "pydantic", "python-multipart", "soxr"]
+# torch is not listed: install the CPU or CUDA build yourself (see requirements_cpu.txt / requirements_gpu.txt).
+train = ["librosa", "scipy", "numba", "onnx", "psutil", "soundfile"]
+
+[project.scripts]
+wpiper-synthesize = "wpiper.synthesize:main"
+wpiper-audiobook = "wpiper.audiobook.__main__:main"
+wpiper-prepare = "wpiper.prepare_big:main"
+wpiper-split = "wpiper.make_split:main"
+wpiper-train = "wpiper.train:main"
+wpiper-export = "wpiper.export_onnx:main"
+
+[tool.setuptools.packages.find]
+include = ["wpiper", "wpiper.*"]
+
+[tool.setuptools.package-data]
+wpiper = ["*.pyd", "*.html", "espeak-ng-data/**/*"]
+"wpiper.audiobook" = ["*.html"]

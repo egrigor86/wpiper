@@ -1,0 +1,16 @@
+name English (Australia)
+language en-au
+language en 6
+
+status testing
+
+phonemes en-au
+dictrules 9
+
+stressLength 170 130 200 200 0 0 250 280
+
+replace 00  o@  O@
+replace 03 I i
+replace 03 I2 i
+replace 03 @ a#
+replace 03 3 a#

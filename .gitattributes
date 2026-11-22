@@ -1,0 +1,6 @@
+# Compiled espeak-ng data: store byte-for-byte, never convert line endings.
+wpiper/espeak-ng-data/** -text
+*.pyd binary
+
+# Windows batch files need CRLF.
+*.bat text eol=crlf
