@@ -16,11 +16,15 @@ on plain Windows: no WSL, no C compiler, no Docker.
 
 ## Pretrained voice
 
-A ready-made English voice, **Christopher**, is on Hugging Face:
+A ready-made English voice with an Australian accent, **Christopher**, is on Hugging Face:
 [Egrigor/wpiper-christopher](https://huggingface.co/Egrigor/wpiper-christopher). It has
 the ONNX voice plus the full training checkpoint, which makes a good base for fine-tuning your own voice.
 Download `christopher.onnx` and `christopher.onnx.json` into `voices\` to follow the examples below.
 Any other Piper voice works too.
+
+The Christopher voice was trained on Australian English audio, but with **en-US** phonemes, because
+the `en-au` phonemizer described below was added after it was trained. It sounds Australian
+because of its audio, and its config correctly stays on `en-us`.
 
 ## Requirements
 
@@ -126,7 +130,8 @@ Pick **English (Australia)** in the trainer, or pass `--espeak-voice en-au --lan
 the audiobook maker phonemize with the Australian rules automatically.
 
 The phoneme symbols are the same set Piper already uses, so en-AU datasets can fine-tune from an
-English base checkpoint such as Christopher's. `samples_au.txt` has test sentences. The espeak-ng source changes behind
+English base checkpoint such as Christopher's (already Australian-sounding, though phonemized as
+en-US). `samples_au.txt` has test sentences. The espeak-ng source changes behind
 the voice (and how to rebuild the data) are in [espeak-ng-en-au/](espeak-ng-en-au/README.md).
 
 ## Other tools
